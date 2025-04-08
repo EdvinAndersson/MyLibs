@@ -1,0 +1,18 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "iterator": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "xutility": "c",
+        "xmemory": "cpp",
+        "stdio.h": "c",
+        "atomic": "c",
+        "memory": "c",
+        "cstring": "c",
+        "util_memory_arena.h": "c",
+        "string.h": "c",
+        "memory.h": "c",
+        "util_string.h": "c"
+    }
+}
