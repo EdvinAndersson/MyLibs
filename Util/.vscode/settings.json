@@ -13,6 +13,7 @@
         "util_memory_arena.h": "c",
         "string.h": "c",
         "memory.h": "c",
-        "util_string.h": "c"
+        "util_string.h": "c",
+        "windows.h": "c"
     }
 }

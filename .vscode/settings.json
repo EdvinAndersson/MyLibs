@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "util_memory_arena.h": "c",
+        "util_assert.h": "c",
+        "util_window.h": "c",
+        "util_string.h": "c",
+        "util_event.h": "c",
+        "memory.h": "c",
+        "corecrt_memory.h": "c",
+        "stdio.h": "c"
+    }
+}

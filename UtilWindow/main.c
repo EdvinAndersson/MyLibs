@@ -1,0 +1,35 @@
+#include "UtilWindow/src/util_window.h"
+
+int main() {
+    MemoryArena arena = arena_init(1024*1024);
+
+    Window *window = window_create(&arena, str_create("A Title"));
+
+    int running = 0;
+    do {
+        running = window_poll_message();
+
+        while (window_event_exists() != 0) {
+            WindowEvent window_event = window_event_pop();
+            switch (window_event.type)
+            {
+                case WindowEventType_Close: {
+                    WindowEvent_WindowEventType_Close *e = window_event.event;
+                    printf("WindowEventType_Close: Data: %i\n", e->i);
+                } break;
+                case WindowEventType_Resize: {
+                    WindowEvent_WindowEventType_Resize *e = window_event.event;
+                    printf("WindowEventType_Resize: Width: %i, height: %i\n", e->width, e->height);
+                } break;
+                case WindowEventType_MouseMove: {
+                    WindowEvent_WindowEventType_MouseMove *e = window_event.event;
+                    printf("WindowEventType_MouseMove: x: %i, y: %i\n", e->x, e->y);
+                } break;
+            }
+        }
+
+    } while (running > 0);
+
+    printf("DONE\n");
+    return 0;
+}

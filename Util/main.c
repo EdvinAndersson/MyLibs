@@ -1,5 +1,6 @@
 #include "src/util_memory_arena.h"
 #include "src/util_string.h"
+#include "src/util_math.h"
 
 int main() {
     MemoryArena arena = arena_init(1024);
@@ -32,6 +33,10 @@ int main() {
 
     printf("Sub string: %s\n", str_to_cstr(&arena, str5));
     
+    vec2_t v = { 1, 0 };
+
+    printf("Vec2: (%f, %f)\n", v.x, v.y);
+
     arena_log_info(&arena);
     return 0;
 }
