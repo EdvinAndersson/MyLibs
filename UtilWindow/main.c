@@ -5,9 +5,9 @@ int main() {
 
     Window *window = window_create(&arena, str_create("A Title"));
 
-    int running = 0;
+    int running = 1;
     do {
-        running = window_poll_message();
+        window_poll_message();
 
         while (window_event_exists() != 0) {
             WindowEvent window_event = window_event_pop();
@@ -16,6 +16,7 @@ int main() {
                 case WindowEventType_Close: {
                     WindowEvent_WindowEventType_Close *e = window_event.event;
                     printf("WindowEventType_Close: Data: %i\n", e->i);
+                    running = 0;
                 } break;
                 case WindowEventType_Resize: {
                     WindowEvent_WindowEventType_Resize *e = window_event.event;

@@ -3,19 +3,19 @@
 Window *g_window;
 
 #define _WINDOW_INVOKE_EVENT(type) _window_invoke_event(type, arena_alloc(&g_window->refreshed_arena, 1, WindowEvent_##type))
-
+int test;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
+    //UTIL_ASSERT(test == 1, "ERROR");
     switch (uMsg) {
         case WM_SIZE: {
             WindowEvent_WindowEventType_Resize *e = _WINDOW_INVOKE_EVENT(WindowEventType_Resize);
             e->width = LOWORD(lParam);
             e->height = HIWORD(lParam);
-
         } break;
         case WM_CLOSE: {
             WindowEvent_WindowEventType_Close* e = _WINDOW_INVOKE_EVENT(WindowEventType_Close);
             e->i = 0;
+            DestroyWindow(hwnd);
         } break;
         case WM_MOUSEMOVE: {
             WindowEvent_WindowEventType_MouseMove *e = _WINDOW_INVOKE_EVENT(WindowEventType_MouseMove);
@@ -23,20 +23,27 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             e->y = HIWORD(lParam);
         } break;
         case WM_DESTROY: {
-            PostQuitMessage(0);
-        } return 0;
+            WindowEvent_WindowEventType_Close* e = _WINDOW_INVOKE_EVENT(WindowEventType_Close);
+            e->i = 0;
+        } break;
+        case WM_QUIT: {
+        } break;
+        default: {
+            return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        }
     }
-
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    return 0;
 }
 
 Window* window_create(MemoryArena *arena, str_t title) {
     g_window = arena_alloc(arena, 1, Window);
+    g_window->refreshed_arena = arena_init(1024*512);
 
     WNDCLASS wc = { 0 };
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = GetModuleHandle(0);
     wc.lpszClassName = "Sample Window Class";
+    //wc.hCursor = LoadCursorA(0, IDC_ARROW);
 
     RegisterClass(&wc);
 
@@ -56,24 +63,21 @@ Window* window_create(MemoryArena *arena, str_t title) {
 
     UTIL_ASSERT(g_window->hwnd != 0, "Window handle coult not be created!");
 
-    g_window->refreshed_arena = arena_init(1024*512);
-
     ShowWindow(g_window->hwnd, 1);
 
     return g_window;
 }
 
-int window_poll_message() {
+void window_poll_message() {
     arena_free(&g_window->refreshed_arena);
 
     MSG msg = { 0 };
-    int result = GetMessageA(&msg, NULL, 0, 0);
-
-    if (result > 0) {
+    test = 1;
+    while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
     }
-    return result;
+    test = 0;
 }
 
 int window_event_exists() {

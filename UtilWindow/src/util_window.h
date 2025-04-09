@@ -25,7 +25,7 @@ struct Window {
 } typedef Window;
 
 Window* window_create(MemoryArena *arena, str_t title);
-int window_poll_message();
+void window_poll_message();
 int window_event_exists();
 WindowEvent window_event_pop();
 
