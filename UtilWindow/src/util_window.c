@@ -23,22 +23,28 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             e->i = 0;
         } break;
         case WM_LBUTTONDOWN: {
-            g_window->input_mask |= WINDOW_MOUSE1_DOWN;
+            g_window->input_mask |= WINDOW_MOUSE1_PRESSED;
+            g_window->input_mask |= WINDOW_MOUSE1_HELD;
         } break;
         case WM_LBUTTONUP: {
             g_window->input_mask |= WINDOW_MOUSE1_RELEASE;
+            g_window->input_mask = ~(~g_window->input_mask | WINDOW_MOUSE1_HELD);
         } break;
         case WM_RBUTTONDOWN: {
-            g_window->input_mask |= WINDOW_MOUSE2_DOWN;
+            g_window->input_mask |= WINDOW_MOUSE2_PRESSED;
+            g_window->input_mask |= WINDOW_MOUSE2_HELD;
         } break;
         case WM_RBUTTONUP: {
             g_window->input_mask |= WINDOW_MOUSE2_RELEASE;
+            g_window->input_mask = ~(~g_window->input_mask | WINDOW_MOUSE2_HELD);
         } break;
         case WM_MBUTTONDOWN: {
-            g_window->input_mask |= WINDOW_MOUSE3_DOWN;
+            g_window->input_mask |= WINDOW_MOUSE3_PRESSED;
+            g_window->input_mask |= WINDOW_MOUSE3_HELD;
         } break;
         case WM_MBUTTONUP: {
             g_window->input_mask |= WINDOW_MOUSE3_RELEASE;
+            g_window->input_mask = ~(~g_window->input_mask | WINDOW_MOUSE3_HELD);
         } break;
         case WM_QUIT: {
         } break;
@@ -85,7 +91,8 @@ void window_poll_message() {
     arena_free(&g_window->refreshed_arena);
     g_window->event_queue = 0;
 
-    g_window->input_mask = 0;
+    uint32_t mask = g_window->input_mask & (WINDOW_MOUSE1_HELD | WINDOW_MOUSE2_HELD | WINDOW_MOUSE3_HELD);
+    g_window->input_mask = mask;
     
     MSG msg = { 0 };
     

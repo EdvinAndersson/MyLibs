@@ -25,14 +25,14 @@ int main() {
             }
         }
 
-        if (window_mouse_input(WINDOW_MOUSE1_DOWN)) {
+        if (window_mouse_input(WINDOW_MOUSE1_PRESSED)) {
             printf("Mouse 1 down\n");
         }
         if (window_mouse_input(WINDOW_MOUSE1_RELEASE)) {
             printf("Mouse 1 release\n");
         }
-        if (window_mouse_input(WINDOW_MOUSE2_DOWN)) {
-            printf("Mouse 2 down\n");
+        if (window_mouse_input(WINDOW_MOUSE1_HELD)) {
+            printf("Mouse 1 held\n");
         }
 
     } while (running > 0);

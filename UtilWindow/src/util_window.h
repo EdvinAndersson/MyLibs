@@ -22,12 +22,15 @@ typedef struct WindowEventQueue {
 } WindowEventQueue;
 
 typedef enum WindowMouseInput {
-    WINDOW_MOUSE1_DOWN = 1 << 0,
-    WINDOW_MOUSE1_RELEASE = 1 << 1,
-    WINDOW_MOUSE2_DOWN = 1 << 2,
-    WINDOW_MOUSE2_RELEASE = 1 << 3,
-    WINDOW_MOUSE3_DOWN = 1 << 4,
-    WINDOW_MOUSE3_RELEASE = 1 << 5,
+    WINDOW_MOUSE1_PRESSED = 1 << 0,
+    WINDOW_MOUSE1_HELD = 1 << 1,
+    WINDOW_MOUSE1_RELEASE = 1 << 2,
+    WINDOW_MOUSE2_PRESSED = 1 << 3,
+    WINDOW_MOUSE2_HELD = 1 << 4,
+    WINDOW_MOUSE2_RELEASE = 1 << 5,
+    WINDOW_MOUSE3_PRESSED = 1 << 6,
+    WINDOW_MOUSE3_HELD = 1 << 7,
+    WINDOW_MOUSE3_RELEASE = 1 << 8,
 } WindowMouseInput;
 
 typedef struct Window {
