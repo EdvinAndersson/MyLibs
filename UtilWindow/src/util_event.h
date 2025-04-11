@@ -4,8 +4,7 @@
 
 enum WindowEventType {
     WindowEventType_Close,
-    WindowEventType_Resize,
-    WindowEventType_MouseMove
+    WindowEventType_Resize
 } typedef WindowEventType;
 
 struct WindowEvent_WindowEventType_Close {
@@ -15,7 +14,3 @@ struct WindowEvent_WindowEventType_Close {
 struct WindowEvent_WindowEventType_Resize {
     int width, height;
 } typedef WindowEvent_WindowEventType_Resize;
-
-struct WindowEvent_WindowEventType_MouseMove {
-    int x, y;
-} typedef WindowEvent_WindowEventType_MouseMove;

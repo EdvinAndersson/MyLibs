@@ -3,9 +3,8 @@
 Window *g_window;
 
 #define _WINDOW_INVOKE_EVENT(type) _window_invoke_event(type, arena_alloc(&g_window->refreshed_arena, 1, WindowEvent_##type))
-int test;
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    //UTIL_ASSERT(test == 1, "ERROR");
     switch (uMsg) {
         case WM_SIZE: {
             WindowEvent_WindowEventType_Resize *e = _WINDOW_INVOKE_EVENT(WindowEventType_Resize);
@@ -15,16 +14,31 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_CLOSE: {
             WindowEvent_WindowEventType_Close* e = _WINDOW_INVOKE_EVENT(WindowEventType_Close);
             e->i = 0;
-            DestroyWindow(hwnd);
         } break;
         case WM_MOUSEMOVE: {
-            WindowEvent_WindowEventType_MouseMove *e = _WINDOW_INVOKE_EVENT(WindowEventType_MouseMove);
-            e->x = LOWORD(lParam);
-            e->y = HIWORD(lParam);
+            g_window->mouse_pos = (vec2_t) { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
         } break;
         case WM_DESTROY: {
             WindowEvent_WindowEventType_Close* e = _WINDOW_INVOKE_EVENT(WindowEventType_Close);
             e->i = 0;
+        } break;
+        case WM_LBUTTONDOWN: {
+            g_window->input_mask |= WINDOW_MOUSE1_DOWN;
+        } break;
+        case WM_LBUTTONUP: {
+            g_window->input_mask |= WINDOW_MOUSE1_RELEASE;
+        } break;
+        case WM_RBUTTONDOWN: {
+            g_window->input_mask |= WINDOW_MOUSE2_DOWN;
+        } break;
+        case WM_RBUTTONUP: {
+            g_window->input_mask |= WINDOW_MOUSE2_RELEASE;
+        } break;
+        case WM_MBUTTONDOWN: {
+            g_window->input_mask |= WINDOW_MOUSE3_DOWN;
+        } break;
+        case WM_MBUTTONUP: {
+            g_window->input_mask |= WINDOW_MOUSE3_RELEASE;
         } break;
         case WM_QUIT: {
         } break;
@@ -43,7 +57,6 @@ Window* window_create(MemoryArena *arena, str_t title) {
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = GetModuleHandle(0);
     wc.lpszClassName = "Sample Window Class";
-    //wc.hCursor = LoadCursorA(0, IDC_ARROW);
 
     RegisterClass(&wc);
 
@@ -70,14 +83,16 @@ Window* window_create(MemoryArena *arena, str_t title) {
 
 void window_poll_message() {
     arena_free(&g_window->refreshed_arena);
+    g_window->event_queue = 0;
 
+    g_window->input_mask = 0;
+    
     MSG msg = { 0 };
-    test = 1;
+    
     while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
     }
-    test = 0;
 }
 
 int window_event_exists() {
@@ -94,6 +109,10 @@ WindowEvent window_event_pop() {
     }
     return result;
 }
+int window_mouse_input(WindowMouseInput input_type) {
+    return (g_window->input_mask & input_type) == input_type;
+}
+
 void _window_enqueue(WindowEventQueue *e_queue) {
     if (g_window->event_queue == 0){
         g_window->event_queue = e_queue;

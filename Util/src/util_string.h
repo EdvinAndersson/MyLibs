@@ -8,6 +8,8 @@ struct str_t {
     size_t size;
 } typedef str_t;
 
+#define str_lit(str) (str_t) { str, sizeof(str) - 1 }
+
 str_t str_create(char *str);
 str_t str_cat(MemoryArena *arena, str_t str1, str_t str2);
 str_t str_copy(MemoryArena *arena, str_t str);

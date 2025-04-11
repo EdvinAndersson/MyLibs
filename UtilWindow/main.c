@@ -4,7 +4,7 @@ int main() {
     MemoryArena arena = arena_init(1024*1024);
 
     Window *window = window_create(&arena, str_create("A Title"));
-
+    
     int running = 1;
     do {
         window_poll_message();
@@ -22,11 +22,17 @@ int main() {
                     WindowEvent_WindowEventType_Resize *e = window_event.event;
                     printf("WindowEventType_Resize: Width: %i, height: %i\n", e->width, e->height);
                 } break;
-                case WindowEventType_MouseMove: {
-                    WindowEvent_WindowEventType_MouseMove *e = window_event.event;
-                    printf("WindowEventType_MouseMove: x: %i, y: %i\n", e->x, e->y);
-                } break;
             }
+        }
+
+        if (window_mouse_input(WINDOW_MOUSE1_DOWN)) {
+            printf("Mouse 1 down\n");
+        }
+        if (window_mouse_input(WINDOW_MOUSE1_RELEASE)) {
+            printf("Mouse 1 release\n");
+        }
+        if (window_mouse_input(WINDOW_MOUSE2_DOWN)) {
+            printf("Mouse 2 down\n");
         }
 
     } while (running > 0);

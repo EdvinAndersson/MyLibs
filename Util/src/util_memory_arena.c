@@ -12,12 +12,8 @@ MemoryArena arena_init(size_t size) {
     return arena;
 }
 void* _arena_alloc(MemoryArena *arena, size_t size, size_t align) {
-    ptrdiff_t ialigned = (ptrdiff_t) arena->alloc_pos;
-    ialigned += (-ialigned) & (align - 1);
-    void *result = (void *) ialigned;
-
     void *res = _arena_alloc_no_zero(arena, size, align);
-    memset(result, 0, size);
+    memset(res, 0, size);
 
     return res;
 }
