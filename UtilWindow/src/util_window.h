@@ -9,7 +9,9 @@
 #include "Util/src/util_string.h"
 #include "Util/src/util_math.h"
 
+#include "util_opengl_bindings.h"
 #include "util_event.h"
+#include "util_keycodes.h"
 
 typedef struct WindowEvent {
     WindowEventType type;
@@ -37,15 +39,30 @@ typedef struct Window {
     HWND hwnd;
     MemoryArena refreshed_arena;
     WindowEventQueue *event_queue;
+
+    PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
+    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
+
+    //Input
     vec2_t mouse_pos;
     uint32_t input_mask;
+
+    vec2_t window_size;
 } Window;
 
 Window* window_create(MemoryArena *arena, str_t title);
 void window_poll_message();
+void window_swap_buffers();
 int window_event_exists();
 WindowEvent window_event_pop();
 int window_mouse_input(WindowMouseInput input_type);
+int window_key_input(uint32_t key_code);
+vec2_t window_get_size();
+
+void _window_create_opengl_context();
+void _window_load_wgl_functions();
+void _window_load_opengl_functions();
 
 void _window_enqueue(WindowEventQueue *queue);
 void* _window_invoke_event(WindowEventType type, void *event);
+int _string_are_equal(const char* src, const char* dst, size_t dstlen);

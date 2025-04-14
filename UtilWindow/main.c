@@ -1,4 +1,4 @@
-#include "UtilWindow/src/util_window.h"
+#include "src/util_window.h"
 
 int main() {
     MemoryArena arena = arena_init(1024*1024);
@@ -33,6 +33,12 @@ int main() {
         }
         if (window_mouse_input(WINDOW_MOUSE1_HELD)) {
             printf("Mouse 1 held\n");
+        }
+        if (window_key_input(KEY_0)) {
+            printf("0\n");
+        }
+        if (window_key_input(KEY_A)) {
+            printf("A\n");
         }
 
     } while (running > 0);

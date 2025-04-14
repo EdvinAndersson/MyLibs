@@ -5,7 +5,7 @@
         "name": "C/C++: cl.exe build and debug active file",
         "type": "cppvsdbg",
         "request": "launch",
-        "program": "UtilWindow/build_test/main.exe",
+        "program": "UtilRenderer/build_test/main.exe",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",

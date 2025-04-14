@@ -4,6 +4,7 @@ if not exist build_release mkdir build_release
 pushd build_release
 
 set compile_flags=^
+/D_CRT_SECURE_NO_WARNINGS ^
 /O2 /MP /Oi /W4 /WX /c
 
 set source_files=^

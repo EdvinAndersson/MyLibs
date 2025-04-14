@@ -10,13 +10,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             WindowEvent_WindowEventType_Resize *e = _WINDOW_INVOKE_EVENT(WindowEventType_Resize);
             e->width = LOWORD(lParam);
             e->height = HIWORD(lParam);
+            g_window->window_size = (vec2_t) { (float) e->width, (float) e->height };
         } break;
         case WM_CLOSE: {
             WindowEvent_WindowEventType_Close* e = _WINDOW_INVOKE_EVENT(WindowEventType_Close);
             e->i = 0;
         } break;
         case WM_MOUSEMOVE: {
-            g_window->mouse_pos = (vec2_t) { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+            g_window->mouse_pos = (vec2_t) { (float) GET_X_LPARAM(lParam), (float) GET_Y_LPARAM(lParam) };
         } break;
         case WM_DESTROY: {
             WindowEvent_WindowEventType_Close* e = _WINDOW_INVOKE_EVENT(WindowEventType_Close);
@@ -63,6 +64,7 @@ Window* window_create(MemoryArena *arena, str_t title) {
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = GetModuleHandle(0);
     wc.lpszClassName = "Sample Window Class";
+    wc.hCursor = LoadCursorA(0, IDC_ARROW);
 
     RegisterClass(&wc);
 
@@ -81,6 +83,9 @@ Window* window_create(MemoryArena *arena, str_t title) {
     );
 
     UTIL_ASSERT(g_window->hwnd != 0, "Window handle coult not be created!");
+
+    _window_create_opengl_context();
+    _window_load_opengl_functions();
 
     ShowWindow(g_window->hwnd, 1);
 
@@ -102,6 +107,10 @@ void window_poll_message() {
     }
 }
 
+void window_swap_buffers() {
+    SwapBuffers(GetDC(g_window->hwnd));
+}
+
 int window_event_exists() {
     if (g_window->event_queue != 0)
         return 1;
@@ -117,7 +126,154 @@ WindowEvent window_event_pop() {
     return result;
 }
 int window_mouse_input(WindowMouseInput input_type) {
-    return (g_window->input_mask & input_type) == input_type;
+    return (g_window->input_mask & (uint32_t) input_type) == (uint32_t) input_type;
+}
+int window_key_input(uint32_t key_code) {
+    return GetKeyState(key_code) & 0x8000;
+}
+vec2_t window_get_size() {
+    return g_window->window_size;
+}
+
+void _window_create_opengl_context() {
+    _window_load_wgl_functions();
+
+    int pixel_format_attribs[] = {
+        WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+        WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+        WGL_DOUBLE_BUFFER_ARB,  GL_TRUE,
+        WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
+        WGL_COLOR_BITS_ARB,     24,
+        WGL_DEPTH_BITS_ARB,     24,
+        WGL_STENCIL_BITS_ARB,   8,
+        0,
+    };
+    int format;
+    UINT formats;
+    HDC hdc = GetDC(g_window->hwnd);
+    if (!g_window->wglChoosePixelFormatARB(hdc, pixel_format_attribs, NULL, 1, &format, &formats) || formats == 0) {
+        UTIL_ASSERT(0, "OpenGL does not support required pixel format!");
+    }
+
+    PIXELFORMATDESCRIPTOR desc;
+    desc.nSize = sizeof(desc);
+    BOOL ok = DescribePixelFormat(hdc, format, sizeof(desc), &desc);
+    UTIL_ASSERT(ok, "Failed to describe OpenGL pixel format");
+
+    if (!SetPixelFormat(hdc, format, &desc)) {
+        UTIL_ASSERT(0, "Cannot set OpenGL selected pixel format!");
+    }
+
+    // Create modern OpenGL context
+    int attrib[] = {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+        WGL_CONTEXT_MINOR_VERSION_ARB, 5,
+        WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+#ifndef NDEBUG
+        WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
+#endif
+        0,
+    };
+
+    HGLRC rc = g_window->wglCreateContextAttribsARB(hdc, NULL, attrib);
+    if (!rc) {
+        UTIL_ASSERT(0, "Cannot create modern OpenGL context! OpenGL version 4.5 not supported?");
+    }
+
+    ok = wglMakeCurrent(hdc, rc);
+    UTIL_ASSERT(ok, "Failed to make current OpenGL context");
+
+    printf("OPENGL VERSION: %s\n", (char *)glGetString(GL_VERSION));
+}
+void _window_load_wgl_functions() {
+    // To get WGL functions we need valid GL context, so create dummy window for dummy GL contetx
+    HWND dummy = CreateWindowExW(
+        0, L"STATIC", L"DummyWindow", WS_OVERLAPPED,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        NULL, NULL, NULL, NULL);
+    UTIL_ASSERT(dummy, "Failed to create dummy window");
+
+    HDC dc = GetDC(dummy);
+    UTIL_ASSERT(dc, "Failed to get device context for dummy window");
+
+    PIXELFORMATDESCRIPTOR desc;
+    desc.nSize = sizeof(desc);
+    desc.nVersion = 1;
+    desc.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    desc.iPixelType = PFD_TYPE_RGBA;
+    desc.cColorBits = 24;
+    
+    int format = ChoosePixelFormat(dc, &desc);
+    if (!format) {
+        UTIL_ASSERT(0, "Cannot choose OpenGL pixel format for dummy window!");
+    }
+
+    int ok = DescribePixelFormat(dc, format, sizeof(desc), &desc);
+    UTIL_ASSERT(ok, "Failed to describe OpenGL pixel format");
+
+    // reason to create dummy window is that SetPixelFormat can be called only once for the window
+    if (!SetPixelFormat(dc, format, &desc)) {
+        UTIL_ASSERT(0, "Cannot set OpenGL pixel format for dummy window!");
+    }
+
+    HGLRC rc = wglCreateContext(dc);
+    UTIL_ASSERT(rc, "Failed to create OpenGL context for dummy window");
+
+    ok = wglMakeCurrent(dc, rc);
+    UTIL_ASSERT(ok, "Failed to make current OpenGL context for dummy window");
+
+    // https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_extensions_string.txt
+    PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC) wglGetProcAddress("wglGetExtensionsStringARB");
+    if (!wglGetExtensionsStringARB) {
+        UTIL_ASSERT(0, "OpenGL does not support WGL_ARB_extensions_string extension!");
+    }
+
+    const char* ext = wglGetExtensionsStringARB(dc);
+    UTIL_ASSERT(ext, "Failed to get OpenGL WGL extension string");
+
+    const char* start = ext;
+    for (;;)
+    {
+        while (*ext != 0 && *ext != ' ')
+        {
+            ext++;
+        }
+
+        size_t length = ext - start;
+        if (_string_are_equal("WGL_ARB_pixel_format", start, length))
+        {
+            // https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_pixel_format.txt
+            g_window->wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC) wglGetProcAddress("wglChoosePixelFormatARB");
+        }
+        else if (_string_are_equal("WGL_ARB_create_context", start, length))
+        {
+            // https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_create_context.txt
+            g_window->wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) wglGetProcAddress("wglCreateContextAttribsARB");
+        }
+
+        if (*ext == 0)
+        {
+            break;
+        }
+
+        ext++;
+        start = ext;
+    }
+
+    if (!g_window->wglChoosePixelFormatARB || !g_window->wglCreateContextAttribsARB) {
+        UTIL_ASSERT(0, "OpenGL does not support required WGL extensions for modern context!");
+    }
+
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(rc);
+    ReleaseDC(dummy, dc);
+    DestroyWindow(dummy);
+}
+
+void _window_load_opengl_functions() {
+    #undef X
+    #define X(proc, name) name=(proc)wglGetProcAddress(#name);
+    GLFUNCTIONS
 }
 
 void _window_enqueue(WindowEventQueue *e_queue) {
@@ -146,3 +302,16 @@ void* _window_invoke_event(WindowEventType type, void *event) {
 
     return e_queue->window_event.event;
 }
+
+int _string_are_equal(const char* src, const char* dst, size_t dstlen)
+	{
+		while (*src && dstlen-- && *dst)
+		{
+			if (*src++ != *dst++)
+			{
+				return 0;
+			}
+		}
+
+		return (dstlen && *src == *dst) || (!dstlen && *src == 0);
+	}

@@ -14,6 +14,14 @@ str_t str_create(char *str) {
     return result;
 }
 
+str_t str_create_empty(MemoryArena *arena, int size) {
+    str_t result = {0};
+    result.size = size;
+    result.buf = arena_alloc(arena, size, char);
+    
+    return result;
+}
+
 str_t str_cat(MemoryArena *arena, str_t str1, str_t str2) {
     size_t count = str1.size + str2.size;
 
@@ -59,7 +67,8 @@ str_t str_substr(str_t str, size_t start, size_t end) {
 }
 
 char* str_to_cstr(MemoryArena *arena, str_t str) {
-    char *result = arena_alloc_no_zero(arena, str.size, char);
+    char *result = arena_alloc_no_zero(arena, str.size + 1, char);
     memcpy(result, str.buf, str.size);
+    result[str.size] = 0;
     return result;
 }

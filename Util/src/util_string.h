@@ -11,6 +11,7 @@ struct str_t {
 #define str_lit(str) (str_t) { str, sizeof(str) - 1 }
 
 str_t str_create(char *str);
+str_t str_create_empty(MemoryArena *arena, int size);
 str_t str_cat(MemoryArena *arena, str_t str1, str_t str2);
 str_t str_copy(MemoryArena *arena, str_t str);
 str_t str_substr(str_t str, size_t start, size_t end);
