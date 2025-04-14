@@ -37,11 +37,16 @@ typedef enum WindowMouseInput {
 
 typedef struct Window {
     HWND hwnd;
+    HDC hdc;
     MemoryArena refreshed_arena;
     WindowEventQueue *event_queue;
 
     PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
     PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
+
+    //Time
+    double cpu_frequency;
+    double process_start_time;
 
     //Input
     vec2_t mouse_pos;
@@ -50,7 +55,7 @@ typedef struct Window {
     vec2_t window_size;
 } Window;
 
-Window* window_create(MemoryArena *arena, str_t title);
+Window* window_create(MemoryArena *arena, str_t title, uint32_t width, uint32_t height);
 void window_poll_message();
 void window_swap_buffers();
 int window_event_exists();
@@ -58,6 +63,8 @@ WindowEvent window_event_pop();
 int window_mouse_input(WindowMouseInput input_type);
 int window_key_input(uint32_t key_code);
 vec2_t window_get_size();
+void window_vsync(uint8_t enable);
+double window_get_time();
 
 void _window_create_opengl_context();
 void _window_load_wgl_functions();

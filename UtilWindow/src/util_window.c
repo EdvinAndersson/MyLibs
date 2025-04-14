@@ -56,7 +56,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
-Window* window_create(MemoryArena *arena, str_t title) {
+Window* window_create(MemoryArena *arena, str_t title, uint32_t width, uint32_t height) {
     g_window = arena_alloc(arena, 1, Window);
     g_window->refreshed_arena = arena_init(1024*512);
 
@@ -75,7 +75,7 @@ Window* window_create(MemoryArena *arena, str_t title) {
         WS_OVERLAPPEDWINDOW,
 
         //Size and position
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        CW_USEDEFAULT, CW_USEDEFAULT, width, height,
         NULL,
         NULL,
         GetModuleHandle(0),
@@ -84,10 +84,20 @@ Window* window_create(MemoryArena *arena, str_t title) {
 
     UTIL_ASSERT(g_window->hwnd != 0, "Window handle coult not be created!");
 
+    g_window->hdc = GetDC(g_window->hwnd);
+
     _window_create_opengl_context();
     _window_load_opengl_functions();
 
     ShowWindow(g_window->hwnd, 1);
+
+    LARGE_INTEGER temp_cpu_frequency;
+    QueryPerformanceFrequency(&temp_cpu_frequency);
+    g_window->cpu_frequency = (double) temp_cpu_frequency.QuadPart;
+
+    LARGE_INTEGER temp;
+    QueryPerformanceCounter(&temp);
+    g_window->process_start_time = (double) temp.QuadPart / g_window->cpu_frequency;
 
     return g_window;
 }
@@ -108,7 +118,7 @@ void window_poll_message() {
 }
 
 void window_swap_buffers() {
-    SwapBuffers(GetDC(g_window->hwnd));
+    SwapBuffers(g_window->hdc);
 }
 
 int window_event_exists() {
@@ -134,6 +144,16 @@ int window_key_input(uint32_t key_code) {
 vec2_t window_get_size() {
     return g_window->window_size;
 }
+void window_vsync(uint8_t enable) {
+    if (wglSwapIntervalEXT)
+        wglSwapIntervalEXT(enable);
+}
+double window_get_time() {
+    LARGE_INTEGER current_counter;
+    QueryPerformanceCounter(&current_counter);
+
+    return (double) current_counter.QuadPart / g_window->cpu_frequency;
+}
 
 void _window_create_opengl_context() {
     _window_load_wgl_functions();
@@ -150,17 +170,16 @@ void _window_create_opengl_context() {
     };
     int format;
     UINT formats;
-    HDC hdc = GetDC(g_window->hwnd);
-    if (!g_window->wglChoosePixelFormatARB(hdc, pixel_format_attribs, NULL, 1, &format, &formats) || formats == 0) {
+    if (!g_window->wglChoosePixelFormatARB(g_window->hdc, pixel_format_attribs, NULL, 1, &format, &formats) || formats == 0) {
         UTIL_ASSERT(0, "OpenGL does not support required pixel format!");
     }
 
     PIXELFORMATDESCRIPTOR desc;
     desc.nSize = sizeof(desc);
-    BOOL ok = DescribePixelFormat(hdc, format, sizeof(desc), &desc);
+    BOOL ok = DescribePixelFormat(g_window->hdc, format, sizeof(desc), &desc);
     UTIL_ASSERT(ok, "Failed to describe OpenGL pixel format");
 
-    if (!SetPixelFormat(hdc, format, &desc)) {
+    if (!SetPixelFormat(g_window->hdc, format, &desc)) {
         UTIL_ASSERT(0, "Cannot set OpenGL selected pixel format!");
     }
 
@@ -175,12 +194,12 @@ void _window_create_opengl_context() {
         0,
     };
 
-    HGLRC rc = g_window->wglCreateContextAttribsARB(hdc, NULL, attrib);
+    HGLRC rc = g_window->wglCreateContextAttribsARB(g_window->hdc, NULL, attrib);
     if (!rc) {
         UTIL_ASSERT(0, "Cannot create modern OpenGL context! OpenGL version 4.5 not supported?");
     }
 
-    ok = wglMakeCurrent(hdc, rc);
+    ok = wglMakeCurrent(g_window->hdc, rc);
     UTIL_ASSERT(ok, "Failed to make current OpenGL context");
 
     printf("OPENGL VERSION: %s\n", (char *)glGetString(GL_VERSION));
