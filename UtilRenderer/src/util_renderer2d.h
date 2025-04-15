@@ -9,6 +9,7 @@
 
 #include "util_shader.h"
 #include "util_texture.h"
+#include "util_shaders.h"
 
 void r2d_init(MemoryArena *arena);
 void r2d_clear(vec4_t color);
@@ -24,6 +25,6 @@ void _r2d_end_batch();
 
 void _r2d_create_texture_3d();
 
-Texture r2d_create_texture_from_file(MemoryArena *arena, str_t path, uint8_t bilinear);
+Texture r2d_create_texture_from_file(str_t path, uint8_t bilinear);
 Texture r2d_create_texture_from_data(TextureData texture_data, uint8_t bilinear);
 Texture r2d_create_texture(unsigned char *data, uint32_t width, uint32_t height, uint8_t bilinear);

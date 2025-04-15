@@ -18,5 +18,5 @@ typedef struct TextureData {
     uint32_t width, height;
 } TextureData;
 
-TextureData texture_load_data(MemoryArena *arena, str_t path);
+TextureData texture_load_data(str_t path);
 void texture_free(TextureData texture_data);

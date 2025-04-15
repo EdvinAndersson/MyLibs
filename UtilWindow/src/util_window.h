@@ -38,7 +38,7 @@ typedef enum WindowMouseInput {
 typedef struct Window {
     HWND hwnd;
     HDC hdc;
-    MemoryArena refreshed_arena;
+    MemoryArena window_arena, refreshed_arena;
     WindowEventQueue *event_queue;
 
     PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
@@ -55,7 +55,7 @@ typedef struct Window {
     vec2_t window_size;
 } Window;
 
-Window* window_create(MemoryArena *arena, str_t title, uint32_t width, uint32_t height);
+Window* window_create(str_t title, uint32_t width, uint32_t height);
 void window_poll_message();
 void window_swap_buffers();
 int window_event_exists();

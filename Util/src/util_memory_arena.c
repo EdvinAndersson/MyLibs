@@ -2,6 +2,8 @@
 
 #include "util_memory_arena.h"
 
+MemoryArena scratch_arenas[SCRATCH_ARENA_COUNT];
+
 MemoryArena arena_init(size_t size) {
     MemoryArena arena;
 
@@ -10,6 +12,28 @@ MemoryArena arena_init(size_t size) {
     arena.size = size;
 
     return arena;
+}
+void arena_init_scratch_arenas(size_t size_per_arena) {
+    for (size_t i = 0; i < SCRATCH_ARENA_COUNT; i++) {
+        scratch_arenas[i] = arena_init(size_per_arena);
+    }
+}
+StackMemoryArena arena_get_scratch(MemoryArena *current) {
+    UTIL_ASSERT(scratch_arenas[0].base_memory != 0, "Scratch arenas are not initialized");
+    
+    if (current == 0)
+        return arena_push_stack_arena(&scratch_arenas[0]);
+
+    for (size_t i = 0; i < SCRATCH_ARENA_COUNT; i++) {
+        if (scratch_arenas[i].base_memory != current->base_memory) {
+            return arena_push_stack_arena(&scratch_arenas[i]);
+        }
+    }
+    UTIL_ASSERT(0, "No available scratch arenas");
+    return (StackMemoryArena) {0};
+}
+void arena_release_scratch(StackMemoryArena *arena) {
+    arena_pop_stack_arena(arena);
 }
 void* _arena_alloc(MemoryArena *arena, size_t size, size_t align) {
     void *res = _arena_alloc_no_zero(arena, size, align);

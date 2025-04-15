@@ -19,4 +19,4 @@ void shader_set_mat4(Shader shader, char *name, mat4_t *v);
 void shader_set_float(Shader shader, char *name, float v);
 void shader_set_int(Shader shader, char *name, int v);
 
-Shader shader_create(MemoryArena *arena, str_t vertex_shader_string, str_t fragment_shader_string);
+Shader shader_create(str_t vertex_shader_string, str_t fragment_shader_string);

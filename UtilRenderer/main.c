@@ -3,14 +3,15 @@
 
 int main() {
     MemoryArena arena = arena_init(1024*1024);
+    arena_init_scratch_arenas(1024*10);
 
-    Window *window = window_create(&arena, str_create("Renderer Test"), 1024, 600);
+    Window *window = window_create(str_create("Renderer Test"), 1024, 600);
     window_vsync(0);
 
     r2d_init(&arena);
 
-    Texture sword_texture = r2d_create_texture_from_file(&arena, str_lit("UtilRenderer/Sword.png"), 0);
-    Texture sword_texture2 = r2d_create_texture_from_file(&arena, str_lit("UtilRenderer/Sword.png"), 1);
+    Texture sword_texture = r2d_create_texture_from_file(str_lit("UtilRenderer/Sword.png"), 0);
+    Texture sword_texture2 = r2d_create_texture_from_file(str_lit("UtilRenderer/Sword.png"), 1);
 
     int running = 1;
 

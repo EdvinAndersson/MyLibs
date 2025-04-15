@@ -29,6 +29,8 @@
         "util_shader.h": "c",
         "xiosbase": "c",
         "xstring": "c",
-        "xutility": "c"
+        "xutility": "c",
+        "stb_image.h": "c",
+        "util_file.h": "c"
     }
 }

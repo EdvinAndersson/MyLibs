@@ -56,8 +56,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
-Window* window_create(MemoryArena *arena, str_t title, uint32_t width, uint32_t height) {
-    g_window = arena_alloc(arena, 1, Window);
+Window* window_create(str_t title, uint32_t width, uint32_t height) {
+    MemoryArena window_arena = arena_init(1024*32);
+
+    g_window = arena_alloc(&window_arena, 1, Window);
+    g_window->window_arena = window_arena;
     g_window->refreshed_arena = arena_init(1024*512);
 
     WNDCLASS wc = { 0 };
@@ -71,7 +74,7 @@ Window* window_create(MemoryArena *arena, str_t title, uint32_t width, uint32_t 
     g_window->hwnd = CreateWindowEx(
         0,
         wc.lpszClassName,
-        str_to_cstr(arena, title),
+        str_to_cstr(&g_window->refreshed_arena, title),
         WS_OVERLAPPEDWINDOW,
 
         //Size and position

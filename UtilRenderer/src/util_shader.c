@@ -27,9 +27,11 @@ void shader_set_int(Shader shader, char *name, int v) {
     unsigned int loc = glGetUniformLocation(shader.id, name);
     glUniform1i(loc, v);
 }
-Shader shader_create(MemoryArena *arena, str_t vertex_shader_string, str_t fragment_shader_string) {
-    char *vertex_shader_string_c = str_to_cstr(arena, vertex_shader_string);
-    char *fragment_shader_string_c = str_to_cstr(arena, fragment_shader_string);
+Shader shader_create(str_t vertex_shader_string, str_t fragment_shader_string) {
+    StackMemoryArena scratch_arena = arena_get_scratch(0);
+
+    char *vertex_shader_string_c = str_to_cstr(scratch_arena.arena, vertex_shader_string);
+    char *fragment_shader_string_c = str_to_cstr(scratch_arena.arena, fragment_shader_string);
 
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -85,6 +87,8 @@ Shader shader_create(MemoryArena *arena, str_t vertex_shader_string, str_t fragm
     
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+
+    arena_release_scratch(&scratch_arena);
 
     return (Shader) { shaderProgram };
 }

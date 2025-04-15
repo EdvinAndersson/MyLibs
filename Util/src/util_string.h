@@ -9,6 +9,7 @@ struct str_t {
 } typedef str_t;
 
 #define str_lit(str) (str_t) { str, sizeof(str) - 1 }
+#define str_comp(str) { str, sizeof(str) - 1 }
 
 str_t str_create(char *str);
 str_t str_create_empty(MemoryArena *arena, int size);

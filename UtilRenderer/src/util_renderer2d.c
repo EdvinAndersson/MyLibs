@@ -40,56 +40,8 @@ void r2d_init(MemoryArena *arena) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     g_r2d_data->next_texture_handle = 1;
-
-    str_t vertex_shader = str_lit(
-        "#version 330 core\n"
-        "layout (location = 0) in vec2 a_pos;\n"
-        "layout (location = 1) in vec2 a_tex_coords;\n"
-        "layout (location = 2) in vec4 a_color;\n"
-        "layout (location = 3) in float a_tex_index;\n"
-        "layout (location = 4) in float a_use_bilinear;\n"
-        ""
-        "out vec2 f_tex_coords;\n"
-        "out vec4 f_color;\n"
-        "flat out float f_tex_index;\n"
-        "flat out float f_use_bilinear;\n"
-        ""
-        "uniform mat4 view;\n"
-        "uniform mat4 projection;\n"
-        ""
-        "void main()\n"
-        "{\n"
-        "    f_color = a_color;\n"
-        "    f_tex_coords = a_tex_coords;\n"
-        "    f_tex_index = a_tex_index;\n"
-        "    f_use_bilinear = a_use_bilinear;\n"
-        "    gl_Position = projection * view * vec4(a_pos, 0.0, 1.0);\n"
-        "}\n"
-    );
-    str_t fragment_shader = str_lit(
-        "#version 330 core\n"
-        ""
-        "in vec4 f_color;\n"
-        "in vec2 f_tex_coords;\n"
-        "flat in float f_tex_index;\n"
-        "flat in float f_use_bilinear;\n"
-        "out vec4 FragColor;\n"
-        ""
-        "uniform sampler2DArray texture_array;\n"
-        ""
-        "void main()\n"
-        "{\n"
-        "    ivec3 texture_size = textureSize(texture_array, 0);\n"
-        "    vec2 uv = f_tex_coords;\n"
-        "    if (f_use_bilinear == 0) {\n"
-        "        uv = (floor(f_tex_coords * (ivec2(texture_size) - 0.0001)) + 0.5) / ivec2(texture_size);\n"
-        "    }\n"
-        "    vec3 array_uv = vec3(uv.x, uv.y, f_tex_index);\n"
-        "    FragColor = f_color * texture(texture_array, array_uv);\n"
-        "}\n"
-    );
     
-    g_r2d_data->default_shader = shader_create(arena, vertex_shader, fragment_shader);
+    g_r2d_data->default_shader = shader_create(g_vertex_shader, g_fragment_shader);
     unsigned char data[4] = { 0xFFFFFFFF };
     g_r2d_data->white_texture = r2d_create_texture(data, 1, 1, 0);
     
@@ -256,8 +208,8 @@ void _r2d_create_texture_3d() {
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char *)&white);
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
-Texture r2d_create_texture_from_file(MemoryArena *arena, str_t path, uint8_t bilinear) {
-    TextureData texture_data = texture_load_data(arena, path);
+Texture r2d_create_texture_from_file(str_t path, uint8_t bilinear) {
+    TextureData texture_data = texture_load_data(path);
     return r2d_create_texture_from_data(texture_data, bilinear);
 }
 Texture r2d_create_texture_from_data(TextureData texture_data, uint8_t bilinear) {
