@@ -55,6 +55,9 @@ inline vec2_t vec2_sub(vec2_t a, vec2_t b) {
 inline float vec2_dot_pro(vec2_t a, vec2_t b) {
 	return a.x * b.x + a.y * b.y;
 }
+inline vec2_t vec2_mul(vec2_t a, float b) {
+	return (vec2_t) { a.x * b, a.y * b };
+}
 inline vec2_t vec2_div(vec2_t a, float b) {
 	return (vec2_t) { a.x / b, a.y / b };
 }

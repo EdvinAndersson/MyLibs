@@ -16,8 +16,14 @@ void r2d_clear(vec4_t color);
 void r2d_update_projection(vec2_t window_size);
 
 void r2d_render_rect(vec2_t position, vec2_t size, vec4_t color, float rotation, vec2_t pivot);
-
 void r2d_render_sprite(vec2_t position, vec2_t size, Texture texture, vec4_t color, float rotation, vec2_t pivot);
+void r2d_render_rect_rounded(vec2_t position, vec2_t size, vec4_t color, float rotation, vec2_t pivot, float rounded_radius);
+void r2d_render_sprite_rounded(vec2_t position, vec2_t size, Texture texture, vec4_t color, float rotation, vec2_t pivot, float rounded_radius);
+
+void r2d_render_thick_line(vec2_t start, vec2_t end, float thickness, vec4_t color);
+
+void r2d_render_line(vec2_t start, vec2_t end, vec4_t color);
+void r2d_flush_lines();
 
 void r2d_flush();
 void _r2d_begin_batch();
