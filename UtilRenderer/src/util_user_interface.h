@@ -19,6 +19,7 @@ typedef struct UIState {
     int active_item;
 
     uint32_t shadow_offset;
+    uint8_t show_debug_lines;
 } UIState;
 
 extern UIState ui_state;
@@ -46,6 +47,14 @@ inline void ui_end() {
 inline int ui_region_hit(int x, int y, int width, int height) {
     return (ui_state.mouse_pos.x >= x && ui_state.mouse_pos.x < x + width && ui_state.mouse_pos.y >= y && ui_state.mouse_pos.y < y + height);
 }
+inline void ui_base(int id, int x, int y, int width, int height) {
+    if (ui_state.show_debug_lines) {
+        r2d_render_thick_line((vec2_t){x, y}, (vec2_t){x + width, y}, 1, (vec4_t){1, 0, 0, 1});
+        r2d_render_thick_line((vec2_t){x, y+height}, (vec2_t){x + width, y + height}, 1, (vec4_t){1, 0, 0, 1});
+        r2d_render_thick_line((vec2_t){x, y}, (vec2_t){x, y + height}, 1, (vec4_t){1, 0, 0, 1});
+        r2d_render_thick_line((vec2_t){x+width, y}, (vec2_t){x + width, y + height}, 1, (vec4_t){1, 0, 0, 1});
+    }
+}
 inline int ui_button(int id, int x, int y, int width, int height) {
     if (ui_region_hit(x, y, width, height)) {
         ui_state.hot_item = id;
@@ -65,16 +74,55 @@ inline int ui_button(int id, int x, int y, int width, int height) {
         r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.5f, 0.5f, 0.5f, 1.0f }, 0, (vec2_t){0,0}, 10);
     }
 
+    ui_base(id, x, y, width, height);
+
     if (ui_state.mouse_down == 0 && ui_state.hot_item == id && ui_state.active_item == id)
         return 1;
 
+    return 0;
+}
+inline int ui_checkbox(int id, int x, int y, int width, int height, int *value) {
+    if (ui_region_hit(x, y, width, height)) {
+        ui_state.hot_item = id;
+        
+        if (ui_state.active_item == 0 && ui_state.mouse_down) {
+            ui_state.active_item = id;
+        }
+    }
+    r2d_render_rect_rounded((vec2_t){ x + ui_state.shadow_offset, y + ui_state.shadow_offset },  (vec2_t){ width, height }, (vec4_t){ 0, 0, 0, 1 }, 0,  (vec2_t){0,0}, 10);
+
+    if (ui_state.hot_item == id) {
+        if (ui_state.active_item == id) {
+            r2d_render_rect_rounded((vec2_t){ x, y }, (vec2_t){ width, height }, (vec4_t){ 1, 1, 1, 1 }, 0, (vec2_t){0,0}, 10);
+        } else {
+            r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.6f, 0.6f, 0.6f, 1 }, 0, (vec2_t){0,0}, 10);
+        }
+    } else {
+        r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.5f, 0.5f, 0.5f, 1.0f }, 0, (vec2_t){0,0}, 10);
+    }
+    int offset = 4;
+    if (ui_state.active_item == id) {
+        offset = 2;
+    }
+    if (*value) {
+        r2d_render_rect_rounded((vec2_t) { (float) x+offset, (float) y+offset }, (vec2_t) { width-offset*2, height-offset*2 }, (vec4_t) { 0.1f, 0.9f, 0.1f, 1 }, 0, (vec2_t){0,0}, 10);
+    } else {
+        r2d_render_rect_rounded((vec2_t) { (float) x+offset, (float) y+offset }, (vec2_t) { width-offset*2, height-offset*2 }, (vec4_t) { 0.9f, 0.1f, 0.1f, 1 }, 0, (vec2_t){0,0}, 10);
+    }
+
+    ui_base(id, x, y, width, height);
+
+    if (ui_state.mouse_down == 0 && ui_state.hot_item == id && ui_state.active_item == id) {
+        *value = !*value;
+        return 1;
+    }
     return 0;
 }
 inline int ui_slider(int id, int x, int y, int width, int height, int max, int *value) {
     int btn_size = width / 2;
     int y_pos = ((height - btn_size * 2) * (*value)) / max + btn_size / 2;
 
-    if (ui_region_hit(x, y + btn_size/2, width, height-btn_size)) {
+    if (ui_region_hit(x, y, width, height)) {
         ui_state.hot_item = id;
         if (ui_state.active_item == 0 && ui_state.mouse_down)
             ui_state.active_item = id;
@@ -96,6 +144,8 @@ inline int ui_slider(int id, int x, int y, int width, int height, int max, int *
     } else {
         r2d_render_rect_rounded((vec2_t) { (float) x + btn_size / 2, (float) y + y_pos  }, (vec2_t) { btn_size, btn_size }, (vec4_t) { 0.6f, 0.6f, 0.6f, 1.0f }, 0, (vec2_t) {0,0}, 10);
     }
+
+    ui_base(id, x, y, width, height);
 
     if (ui_state.active_item == id) {
         int mouse_pos = ui_state.mouse_pos.y - y;
