@@ -2,8 +2,6 @@
 #include "src/util_renderer2d.h"
 #include "src/util_user_interface.h"
 
-UIState ui_state = { 0 };
-
 int main() {
     MemoryArena arena = arena_init(1024*1024*10);
     arena_init_scratch_arenas(1024*10);
@@ -51,18 +49,21 @@ int main() {
         r2d_clear((vec4_t) {0.1,0.1,0.1,1});
 
         ui_begin(window);
+        UIStyle style;
+        style.background_color = (vec4_t) {1,0,0,1};
+        //ui_state.show_debug_lines = 1;
 
         static int arr[4] = {0};
-        static uint16_t mask = 0b1;
+        static uint16_t mask = 0b10;
 
         for (int i = 0; i < 4; i++) {
             int selected = (1 << i & mask) >> i;
-            if (ui_checkbox(GEN_ID + i, 10 + i*30, 10, 25, 25, &selected)) {
+            if (ui_checkbox(GEN_ID + i, 10 + i*30, 10, 25, 25, &selected).mouse_pressed) {
                 mask = 1 << i;
             }
         }
 
-        if ((mask >> 0) & 1) {    
+        if (mask & (1 << 0)) {    
             r2d_render_rect((vec2_t) {100,100}, (vec2_t) {50, 50}, (vec4_t) {1,1,1,1}, 0, (vec2_t) {0.5f, 0.5f});
             r2d_render_rect((vec2_t) {200,100}, (vec2_t) {50, 50}, (vec4_t) {0,0,1,1}, 25.5, (vec2_t) {0.5f, 0.5f});
             r2d_render_rect_rounded((vec2_t) {200,200}, (vec2_t) {50, 50}, (vec4_t) {0,1,0,1}, 45, (vec2_t) {0.5f, 0.5f}, 10);
@@ -87,23 +88,24 @@ int main() {
 
             r2d_render_thick_line((vec2_t) { 200, 400}, (vec2_t) {500, 200}, 3, (vec4_t) {1, 1, 0, 1}); 
         }
-        if ((mask >> 1) & 1) {
+        if (mask & (1 << 1)) {
             static int y = 0;
-            if (ui_slider(GEN_ID, 25, 100, 24, 200, 50, &y)) {
+
+            ui_panel(40, 40, 400, 400);
+
+            if (ui_button(GEN_ID, 50 + y, 50, 100, 30).mouse_pressed) {
+            }
+            if (ui_slider(GEN_ID, 50, 100, 24, 200, 50, &y)) {
                 printf("Value: %i\n", y);
             }
-            if (ui_button(GEN_ID, 25 + y, 50, 100, 30)) {
-                
-            }
-            
+
             static int tof = 0;
-            if (ui_checkbox(GEN_ID, 75, 100, 25, 25, &tof)) {
+            if (ui_checkbox(GEN_ID, 100, 100, 25, 25, &tof).mouse_pressed) {
             }
-            if (ui_checkbox(GEN_ID, 125, 100, 50, 50, &tof)) {
+            if (ui_checkbox(GEN_ID, 150, 100, 50, 50, &tof).mouse_pressed) {
             }
             ui_state.show_debug_lines = tof;
         }
-
         ui_end();
 
         r2d_flush();

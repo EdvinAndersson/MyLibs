@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Util/src/util_math.h"
+#include "Util/src/util_memory_arena.h"
 
 #include "UtilWindow/src/util_window.h"
 #include "util_renderer2d.h"
@@ -11,151 +12,69 @@
     #define GEN_ID (__LINE__)
 #endif
 
+typedef struct UIStyle {
+    vec4_t background_color;
+    vec4_t hot_color;
+    vec4_t active_color;
+    vec4_t panel_color;
+    int32_t shadow_offset;
+} UIStyle;
+
+typedef struct UIStyleItem {
+    UIStyle style;
+    struct UIStyleItem *next;
+} UIStyleItem;
+
 typedef struct UIState {
     vec2_t mouse_pos;
-    int mouse_down;
+    int32_t mouse_down;
 
-    int hot_item;
-    int active_item;
+    int32_t hot_item;
+    int32_t active_item;
 
-    uint32_t shadow_offset;
+    MemoryArena box_arena;
+    uint32_t ui_box_count;
+
+    MemoryArena style_arena;
+    UIStyleItem *style_stack;
+
     uint8_t show_debug_lines;
 } UIState;
 
+typedef struct UIInput {
+    uint8_t hover;
+    uint8_t mouse_down;
+    uint8_t mouse_pressed;
+} UIInput;
+
+typedef enum UIBoxFlags {
+    UIBoxFlags_DrawBackground = (1 << 0),
+    UIBoxFlags_DrawDropShadow = (1 << 1),
+    UIBoxFlags_Clickable = (1 << 2),
+    UIBoxFlags_HotAnimation = (1 << 3),
+    UIBoxFlags_ActiveAnimation = (1 << 4)
+} UIBoxFlags;
+
+typedef struct ui_box {
+    int32_t id;
+    vec4_t bounds;
+    UIBoxFlags flags;
+    UIStyle style;
+} ui_box_t;
+
 extern UIState ui_state;
 
-inline void ui_begin(Window *window) {
-    ui_state.mouse_pos = window->mouse_pos;
+void ui_begin(Window *window);
+void ui_end();
 
-    if (window_mouse_input(WINDOW_MOUSE1_PRESSED)) {
-        ui_state.mouse_down = 1;
-    }
-    if (window_mouse_input(WINDOW_MOUSE1_RELEASE)) {
-        ui_state.mouse_down = 0;
-    }
-    ui_state.shadow_offset = 5;
-    ui_state.hot_item = 0;
-}
-inline void ui_end() {
-    if (ui_state.mouse_down == 0) {
-        ui_state.active_item = 0;
-    } else {
-        if (ui_state.active_item == 0)
-            ui_state.active_item = -1;
-    }
-}
-inline int ui_region_hit(int x, int y, int width, int height) {
-    return (ui_state.mouse_pos.x >= x && ui_state.mouse_pos.x < x + width && ui_state.mouse_pos.y >= y && ui_state.mouse_pos.y < y + height);
-}
-inline void ui_base(int id, int x, int y, int width, int height) {
-    if (ui_state.show_debug_lines) {
-        r2d_render_thick_line((vec2_t){x, y}, (vec2_t){x + width, y}, 1, (vec4_t){1, 0, 0, 1});
-        r2d_render_thick_line((vec2_t){x, y+height}, (vec2_t){x + width, y + height}, 1, (vec4_t){1, 0, 0, 1});
-        r2d_render_thick_line((vec2_t){x, y}, (vec2_t){x, y + height}, 1, (vec4_t){1, 0, 0, 1});
-        r2d_render_thick_line((vec2_t){x+width, y}, (vec2_t){x + width, y + height}, 1, (vec4_t){1, 0, 0, 1});
-    }
-}
-inline int ui_button(int id, int x, int y, int width, int height) {
-    if (ui_region_hit(x, y, width, height)) {
-        ui_state.hot_item = id;
-        
-        if (ui_state.active_item == 0 && ui_state.mouse_down) {
-            ui_state.active_item = id;
-        }
-    }
-    r2d_render_rect_rounded((vec2_t){ x + ui_state.shadow_offset, y + ui_state.shadow_offset },  (vec2_t){ width, height }, (vec4_t){ 0, 0, 0, 1 }, 0,  (vec2_t){0,0}, 10);
-    if (ui_state.hot_item == id) {
-        if (ui_state.active_item == id) {
-            r2d_render_rect_rounded((vec2_t){ x + 2.0f, y + 2.0f }, (vec2_t){ width, height }, (vec4_t){ 1, 1, 1, 1 }, 0, (vec2_t){0,0}, 10);
-        } else {
-            r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.6f, 0.6f, 0.6f, 1 }, 0, (vec2_t){0,0}, 10);
-        }
-    } else {
-        r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.5f, 0.5f, 0.5f, 1.0f }, 0, (vec2_t){0,0}, 10);
-    }
+ui_box_t* ui_box(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, UIBoxFlags flags);
+UIInput ui_button(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height);
+UIInput ui_checkbox(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t *value);
+uint8_t ui_slider(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t max, int32_t *value);
+void ui_panel(int32_t x, int32_t y, int32_t width, int32_t height);
 
-    ui_base(id, x, y, width, height);
-
-    if (ui_state.mouse_down == 0 && ui_state.hot_item == id && ui_state.active_item == id)
-        return 1;
-
-    return 0;
-}
-inline int ui_checkbox(int id, int x, int y, int width, int height, int *value) {
-    if (ui_region_hit(x, y, width, height)) {
-        ui_state.hot_item = id;
-        
-        if (ui_state.active_item == 0 && ui_state.mouse_down) {
-            ui_state.active_item = id;
-        }
-    }
-    r2d_render_rect_rounded((vec2_t){ x + ui_state.shadow_offset, y + ui_state.shadow_offset },  (vec2_t){ width, height }, (vec4_t){ 0, 0, 0, 1 }, 0,  (vec2_t){0,0}, 10);
-
-    if (ui_state.hot_item == id) {
-        if (ui_state.active_item == id) {
-            r2d_render_rect_rounded((vec2_t){ x, y }, (vec2_t){ width, height }, (vec4_t){ 1, 1, 1, 1 }, 0, (vec2_t){0,0}, 10);
-        } else {
-            r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.6f, 0.6f, 0.6f, 1 }, 0, (vec2_t){0,0}, 10);
-        }
-    } else {
-        r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.5f, 0.5f, 0.5f, 1.0f }, 0, (vec2_t){0,0}, 10);
-    }
-    int offset = 4;
-    if (ui_state.active_item == id) {
-        offset = 2;
-    }
-    if (*value) {
-        r2d_render_rect_rounded((vec2_t) { (float) x+offset, (float) y+offset }, (vec2_t) { width-offset*2, height-offset*2 }, (vec4_t) { 0.1f, 0.9f, 0.1f, 1 }, 0, (vec2_t){0,0}, 10);
-    } else {
-        r2d_render_rect_rounded((vec2_t) { (float) x+offset, (float) y+offset }, (vec2_t) { width-offset*2, height-offset*2 }, (vec4_t) { 0.9f, 0.1f, 0.1f, 1 }, 0, (vec2_t){0,0}, 10);
-    }
-
-    ui_base(id, x, y, width, height);
-
-    if (ui_state.mouse_down == 0 && ui_state.hot_item == id && ui_state.active_item == id) {
-        *value = !*value;
-        return 1;
-    }
-    return 0;
-}
-inline int ui_slider(int id, int x, int y, int width, int height, int max, int *value) {
-    int btn_size = width / 2;
-    int y_pos = ((height - btn_size * 2) * (*value)) / max + btn_size / 2;
-
-    if (ui_region_hit(x, y, width, height)) {
-        ui_state.hot_item = id;
-        if (ui_state.active_item == 0 && ui_state.mouse_down)
-            ui_state.active_item = id;
-    }
-    r2d_render_rect_rounded((vec2_t){ x + ui_state.shadow_offset, y + ui_state.shadow_offset },  (vec2_t){ width, height }, (vec4_t){ 0, 0, 0, 1 }, 0,  (vec2_t) {0,0}, 10);
-    
-    if (ui_state.hot_item == id) {
-        r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.6f, 0.6f, 0.6f, 1.0f }, 0, (vec2_t) {0,0}, btn_size / 2);
-    } else {
-        r2d_render_rect_rounded((vec2_t) { (float) x, (float) y }, (vec2_t) { width, height }, (vec4_t) { 0.4f, 0.4f, 0.4f, 1.0f }, 0, (vec2_t) {0,0}, btn_size / 2);
-    }
-    
-    if (ui_state.hot_item == id) {
-        if (ui_state.active_item == id) {
-            r2d_render_rect_rounded((vec2_t) { (float) x + btn_size / 2 - 1, (float) y - 1 + y_pos  }, (vec2_t) { btn_size + 2, btn_size + 2 }, (vec4_t) { 1, 1, 1, 1.0f }, 0, (vec2_t) {0,0}, 10);
-        } else {
-            r2d_render_rect_rounded((vec2_t) { (float) x + btn_size / 2, (float) y + y_pos  }, (vec2_t) { btn_size, btn_size }, (vec4_t) { 0.8f, 0.8f, 0.8f, 1.0f }, 0, (vec2_t) {0,0}, 10);
-        }
-    } else {
-        r2d_render_rect_rounded((vec2_t) { (float) x + btn_size / 2, (float) y + y_pos  }, (vec2_t) { btn_size, btn_size }, (vec4_t) { 0.6f, 0.6f, 0.6f, 1.0f }, 0, (vec2_t) {0,0}, 10);
-    }
-
-    ui_base(id, x, y, width, height);
-
-    if (ui_state.active_item == id) {
-        int mouse_pos = ui_state.mouse_pos.y - y;
-        if (mouse_pos < btn_size) mouse_pos = btn_size;
-        if (mouse_pos > height-btn_size) mouse_pos = height-btn_size;
-        int v = ((mouse_pos - btn_size) * max) / (height-btn_size * 2);
-        if (v != *value) {
-            *value = v;
-            return 1;
-        }
-    }
-    return 0;
-}
+void ui_push_style(UIStyle style);
+void ui_pop_style();
+UIStyle ui_copy_style();
+UIInput ui_input_from_box(ui_box_t *box);
+int8_t ui_region_hit(vec4_t bounds);
