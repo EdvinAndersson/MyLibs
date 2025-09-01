@@ -70,7 +70,7 @@ void ui_end();
 ui_box_t* ui_box(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, UIBoxFlags flags);
 UIInput ui_button(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height);
 UIInput ui_checkbox(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t *value);
-uint8_t ui_slider(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t max, int32_t *value);
+int8_t ui_slider(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t max, int32_t *value);
 void ui_panel(int32_t x, int32_t y, int32_t width, int32_t height);
 
 void ui_push_style(UIStyle style);

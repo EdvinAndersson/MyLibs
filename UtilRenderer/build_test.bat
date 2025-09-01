@@ -1,11 +1,11 @@
 @echo off
 
 pushd Util
---call build_release.bat
+::call build_release.bat
 popd
 
 pushd UtilWindow
---call build_release.bat
+::call build_release.bat
 popd
 
 pushd UtilRenderer
@@ -16,9 +16,11 @@ pushd build_test
 set source_files=../main.c ../src/*.c ../src/vendor/stb_image/stb_image.c
 
 set compile_flags=/Zi /Od ^
--I../../
+-I../../ ^
+-I../src/vendor/freetype/include
 
-set linker_flags=gdi32.lib user32.lib kernel32.lib shell32.lib ole32.lib opengl32.lib ^
+set linker_flags=gdi32.lib user32.lib kernel32.lib shell32.lib ole32.lib opengl32.lib  ^
+../../UtilRenderer/src/vendor/freetype/freetype.lib ^
 ../../Util/build_release/util.lib ^
 ../../UtilWindow/build_release/util_window.lib
 

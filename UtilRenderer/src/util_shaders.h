@@ -91,8 +91,8 @@ static str_t g_vertex_shader_line = str_comp(
     ""
     "void main()\n"
     "{\n"
-    "    f_color = a_color;\n"
-    "    gl_Position = projection * view * vec4(a_pos, 0.0, 1.0);\n"
+    "   f_color = a_color;\n"
+    "   gl_Position = projection * view * vec4(a_pos, 0.0, 1.0);\n"
     "}\n"
 );
 static str_t g_fragment_shader_line = str_comp(
@@ -102,6 +102,35 @@ static str_t g_fragment_shader_line = str_comp(
     ""
     "void main()\n"
     "{\n"
-    "    FragColor = f_color;\n"
+    "   FragColor = f_color;\n"
+    "}\n"
+);
+
+static str_t g_vertex_shader_text = str_comp(
+    "#version 330 core\n"
+    "layout (location = 0) in vec4 vertex;\n"
+    ""
+    "out vec2 f_tex_coords;\n"
+    ""
+    "uniform mat4 projection;\n"
+    ""
+    "void main()\n"
+    "{\n"
+    "   gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);\n"
+    "   f_tex_coords = vec2(vertex.z,1.0-vertex.w);\n"
+    "}\n"
+);
+static str_t g_fragment_shader_text = str_comp(
+    "#version 330 core\n"
+    "in vec2 f_tex_coords;\n"
+    "out vec4 FragColor;\n"
+    ""
+    "uniform sampler2D text;\n"
+    "uniform vec3 textColor;\n"
+    ""
+    "void main()\n"
+    "{\n"
+    "   vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, f_tex_coords).r);\n"
+    "   FragColor = vec4(textColor, 1.0) * sampled;\n"
     "}\n"
 );
