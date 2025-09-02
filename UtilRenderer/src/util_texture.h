@@ -24,6 +24,7 @@ typedef struct TextureArray {
     uint32_t handle;
     uint32_t next_slot;
     TextureFormat texture_format;
+    uint32_t slot_size;
 } TextureArray;
 
 typedef struct Texture {
@@ -41,7 +42,7 @@ typedef struct TextureData {
 
 Texture texture_2d_create(uint32_t width, uint32_t height, TextureFormat texture_format, void *pixel_data);
 
-TextureArray texture_3d_create(uint32_t width, uint32_t height, TextureFormat texture_format);
+TextureArray texture_3d_create(uint32_t texture_size, uint32_t texture_count, TextureFormat texture_format);
 Texture texture_3d_add(TextureArray *texture_array, uint32_t width, uint32_t height, uint8_t bilinear, TextureFormat data_format, void *data);
 
 TextureData texture_load_data(str_t path);

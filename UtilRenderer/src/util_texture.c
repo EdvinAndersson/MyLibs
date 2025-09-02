@@ -23,6 +23,9 @@ Texture texture_2d_create(uint32_t width, uint32_t height, TextureFormat texture
         case TextureFormat_RGBA: {
             format = GL_RGBA;
         } break;
+        default: {
+            UTIL_ASSERT(0, "Non supported texture format...");
+        }
     }
 
     texture.type = TextureType_Texture2D;
@@ -40,42 +43,54 @@ TextureArray texture_3d_create(uint32_t texture_size, uint32_t texture_count, Te
     glGenTextures(1, &texture_array.handle);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array.handle);
 
-    GLint format = GL_RGB;
+    GLint internal_format = GL_RGBA8;
     switch (texture_format)
     {
         case TextureFormat_RED: {
-            format = GL_RED;
+            internal_format = GL_R8;
         } break;
         case TextureFormat_RGB: {
-            format = GL_RGB8;
+            internal_format = GL_RGB8;
         } break;
         case TextureFormat_RGBA: {
-            format = GL_RGBA8;
+            internal_format = GL_RGBA8;
         } break;
+        default: {
+            UTIL_ASSERT(0, "Non supported texture format...");
+        }
     }
 
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, format, texture_size, texture_size, texture_count);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, internal_format, texture_size, texture_size, texture_count);
 
-    texture_array.texture_format = format;
+    texture_array.texture_format = texture_format;
     texture_array.next_slot = 1;
-/*
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    texture_array.slot_size = texture_size;
 
-    uint32_t white = 0xffffffff;
-
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array.handle);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1, 1, 1, 1, format, GL_UNSIGNED_BYTE, (unsigned char *)&white);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-*/
     return texture_array;
 }
 
 Texture texture_3d_add(TextureArray *texture_array, uint32_t width, uint32_t height, uint8_t bilinear, TextureFormat data_format, void *data) {
     Texture texture;
 
+    GLint format = GL_RGBA;
+    switch (data_format)
+    {
+        case TextureFormat_RED: {
+            format = GL_RED;
+        } break;
+        case TextureFormat_RGB: {
+            format = GL_RGB;
+        } break;
+        case TextureFormat_RGBA: {
+            format = GL_RGBA;
+        } break;
+        default: {
+            UTIL_ASSERT(0, "Non supported texture format...");
+        }
+    }
+
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array->handle);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, texture_array->next_slot, width, height, 1, data_format, GL_UNSIGNED_BYTE, data);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, texture_array->next_slot, width, height, 1, format, GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     
     texture.handle = texture_array->next_slot;
@@ -92,7 +107,7 @@ Texture texture_3d_add(TextureArray *texture_array, uint32_t width, uint32_t hei
 
 TextureData texture_load_data(str_t path) {
     StackMemoryArena scratch_arena = arena_get_scratch(0);
-
+    
     TextureData texture_data;
     int nr_channels;
     texture_data.data = stbi_load(str_to_cstr(scratch_arena.arena, path), &texture_data.width, &texture_data.height, &nr_channels, 0);

@@ -4,7 +4,9 @@
 #include "Util/src/util_memory_arena.h"
 
 #include "UtilWindow/src/util_window.h"
+
 #include "util_renderer2d.h"
+#include "util_key_map.h"
 
 #ifdef IMGUI_SRC_ID
     #define GEN_ID ((IMGUI_SRC_ID) + (__LINE__))
@@ -18,6 +20,8 @@ typedef struct UIStyle {
     vec4_t active_color;
     vec4_t panel_color;
     int32_t shadow_offset;
+    vec4_t text_color;
+    float text_size;
 } UIStyle;
 
 typedef struct UIStyleItem {
@@ -52,7 +56,8 @@ typedef enum UIBoxFlags {
     UIBoxFlags_DrawDropShadow = (1 << 1),
     UIBoxFlags_Clickable = (1 << 2),
     UIBoxFlags_HotAnimation = (1 << 3),
-    UIBoxFlags_ActiveAnimation = (1 << 4)
+    UIBoxFlags_ActiveAnimation = (1 << 4),
+    UIBoxFlags_Text = (1 << 5)
 } UIBoxFlags;
 
 typedef struct ui_box {
@@ -60,6 +65,7 @@ typedef struct ui_box {
     vec4_t bounds;
     UIBoxFlags flags;
     UIStyle style;
+    str_t text;
 } ui_box_t;
 
 extern UIState ui_state;
@@ -72,6 +78,7 @@ UIInput ui_button(int32_t id, int32_t x, int32_t y, int32_t width, int32_t heigh
 UIInput ui_checkbox(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t *value);
 int8_t ui_slider(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t max, int32_t *value);
 void ui_panel(int32_t x, int32_t y, int32_t width, int32_t height);
+void ui_text(str_t text, int32_t x, int32_t y);
 
 void ui_push_style(UIStyle style);
 void ui_pop_style();

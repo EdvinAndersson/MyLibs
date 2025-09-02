@@ -11,8 +11,8 @@ int main() {
 
     r2d_init(&arena);
 
-    Texture sword_texture = r2d_texture_array_add(str_lit("UtilRenderer/Sword.png"), 0, GL_RGBA);
-    Texture sword_texture2 = r2d_texture_array_add(str_lit("UtilRenderer/Sword.png"), 1, GL_RGBA);;
+    Texture sword_texture = r2d_texture_array_add(str_lit("UtilRenderer/res/Sword.png"), 0, TextureFormat_RGBA);
+    Texture sword_texture2 = r2d_texture_array_add(str_lit("UtilRenderer/res/Sword.png"), 1, TextureFormat_RGBA);;
 
     int running = 1;
 
@@ -51,7 +51,7 @@ int main() {
         ui_begin(window);
         UIStyle style;
         style.background_color = (vec4_t) {1,0,0,1};
-        //ui_state.show_debug_lines = 1;
+        ui_state.show_debug_lines = 1;
 
         static int arr[4] = {0};
         static uint16_t mask = 0b01;
@@ -62,8 +62,17 @@ int main() {
                 mask = 1 << i;
             }
         }
+        
+        if (mask & (1 << 0)) {
+            UIStyle style = ui_copy_style();
+            style.text_size = 50;
+            ui_push_style(style);
+            ui_text(str_lit("AabclL||,[](){}"), 400, 50);
+            ui_text(str_lit("Hello Edvin!llllllllllllllllllll"), 400, 100);
+            ui_pop_style();
 
-        if (mask & (1 << 0)) {  
+            ui_text(str_lit("Hello Edvin!"), 400, 150);
+
             r2d_render_rect((vec2_t) {100,100}, (vec2_t) {50, 50}, (vec4_t) {1,1,1,1}, 0, (vec2_t) {0.5f, 0.5f});
             r2d_render_rect((vec2_t) {200,100}, (vec2_t) {50, 50}, (vec4_t) {0,0,1,1}, 25.5, (vec2_t) {0.5f, 0.5f});
             r2d_render_rect_rounded((vec2_t) {200,200}, (vec2_t) {50, 50}, (vec4_t) {0,1,0,1}, 45, (vec2_t) {0.5f, 0.5f}, 10);
@@ -81,17 +90,11 @@ int main() {
                 x += 1.0f;
             }
 
-            r2d_render_line((vec2_t) { 000, 000}, (vec2_t) {400, 300}, (vec4_t) {1, 0, 0, 1}); 
-            r2d_render_line((vec2_t) { 100, 100}, (vec2_t) {400, 300}, (vec4_t) {1, 1, 0, 1}); 
-            r2d_render_line((vec2_t) { 200, 200}, (vec2_t) {400, 300}, (vec4_t) {1, 0, 1, 1}); 
-            r2d_render_line((vec2_t) { 300, 200}, (vec2_t) {400, 300}, (vec4_t) {1, 1, 0, 1}); 
-
             r2d_render_thick_line((vec2_t) { 200, 400}, (vec2_t) {500, 200}, 3, (vec4_t) {1, 1, 0, 1});
 
-            r2d_render_text(str_lit("Hello world"), (vec2_t) {500, 150}, 1, (vec3_t) {0.7, 0.7, 0.7});
-            r2d_render_text(str_lit("This is some text!!"), (vec2_t) {500, 250}, 1.2, (vec3_t) {1.0, 0.7, 0.7});
 
-            r2d_render_text_test();
+            //r2d_render_text(str_lit("Hello world"), (vec2_t) {600, 150}, 1.0f / 64.0f * 30, (vec3_t) {0.7, 0.7, 0.7});
+            //r2d_render_text(str_lit("This is some text!!"), (vec2_t) {600, 250}, 1.2, (vec3_t) {1.0, 0.7, 0.7});
         }
         if (mask & (1 << 1)) {
             static int y = 0;
@@ -114,8 +117,6 @@ int main() {
         ui_end();
 
         r2d_flush();
-        r2d_flush_lines();
-        r2d_flush_text();
         
         window_swap_buffers();
     } while (running > 0);

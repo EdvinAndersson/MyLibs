@@ -32,6 +32,8 @@ void ui_begin(Window *window) {
     style.active_color = (vec4_t) { 1.0f, 1.0f, 1.0f, 1.0f };
     style.panel_color = (vec4_t) { 0.2f, 0.2f, 0.2f, 1.0f };
     style.shadow_offset = 5;
+    style.text_color = (vec4_t) { 1.0f, 1.0f, 1.0f, 1.0f };
+    style.text_size = 20;
     ui_push_style(style);
 }
 void ui_end() {
@@ -65,6 +67,10 @@ void ui_end() {
             }
         }
         
+        if (box->flags & UIBoxFlags_Text) {
+            r2d_render_text(box->text, (vec2_t) { pos.x, pos.y }, 1 / (float) FONT_SIZE * box->style.text_size, (vec3_t){ box->style.text_color.r, box->style.text_color.g, box->style.text_color.b });
+        }
+
         if (ui_state.show_debug_lines) {
             r2d_render_thick_line((vec2_t){box->bounds.x, box->bounds.y}, (vec2_t){box->bounds.x + box->bounds.z, box->bounds.y}, 1, (vec4_t){1, 0, 0, 1});
             r2d_render_thick_line((vec2_t){box->bounds.x, box->bounds.y+box->bounds.w}, (vec2_t){box->bounds.x + box->bounds.z, box->bounds.y + box->bounds.w}, 1, (vec4_t){1, 0, 0, 1});
@@ -174,6 +180,29 @@ void ui_panel(int32_t x, int32_t y, int32_t width, int32_t height) {
     ui_box_t *box = ui_box(0, x, y, width, height, flags);
     ui_pop_style();
 }
+void ui_text(str_t text, int32_t x, int32_t y) {
+    UIBoxFlags flags =  UIBoxFlags_Text;
+
+    float text_size = ui_state.style_stack->style.text_size;
+
+    cmap_map_t *c_map = r2d_get_character_map();
+
+    float text_width = 0;
+    float scale = text_size / (float) FONT_SIZE;
+
+    for (size_t i = 0; i < text.size; i++) {
+        str_t c = str_substr(text, i, i+1);
+        int32_t index = cmap_get_index(c_map, c);
+        cmap_char_t ch = c_map->values[index];
+
+        text_width += ((ch.advance >> 6)) * scale;
+    }
+
+    ui_box_t *box = ui_box(0, x, y, text_width, r2d_get_line_height() * scale, flags);
+
+    box->text = text;
+}
+
 void ui_push_style(UIStyle style) {
     UIStyleItem *style_item = arena_alloc(&ui_state.style_arena, 1, UIStyleItem);
     style_item->style = style;
