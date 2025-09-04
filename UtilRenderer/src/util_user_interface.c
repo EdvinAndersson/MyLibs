@@ -181,7 +181,8 @@ void ui_panel(int32_t x, int32_t y, int32_t width, int32_t height) {
     ui_pop_style();
 }
 void ui_text(str_t text, int32_t x, int32_t y) {
-    UIBoxFlags flags =  UIBoxFlags_Text;
+    UIBoxFlags flags =  UIBoxFlags_Text |
+                        UIBoxFlags_DrawBackground;
 
     float text_size = ui_state.style_stack->style.text_size;
 

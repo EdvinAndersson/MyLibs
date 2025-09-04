@@ -41,7 +41,6 @@ typedef struct Renderer2dData {
     Texture white_texture;
     
     render_batch_t quad_batch;
-    render_batch_t line_batch;
     render_batch_t text_batch;
     
     TextureArray texture_array, font_texture_array;
@@ -78,7 +77,7 @@ void r2d_init(MemoryArena *arena) {
     
     g_r2d_data->text_shader = shader_create(g_vertex_shader_text, g_fragment_shader_text);
     shader_use(g_r2d_data->text_shader);
-    shader_set_int(g_r2d_data->text_shader, "text", GL_TEXTURE0);
+    shader_set_int(g_r2d_data->text_shader, "texture_array", GL_TEXTURE0);
 
     //Batch Data
     {
@@ -136,27 +135,6 @@ void r2d_init(MemoryArena *arena) {
 
         glEnableVertexAttribArray(7);
         glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)offsetof(vertex_t, use_bilinear));
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
-
-    {
-        g_r2d_data->line_batch.vertices = arena_alloc(arena, MAX_LINES * 2, line_vertex_t);
-        g_r2d_data->line_batch.vertices_begin = g_r2d_data->line_batch.vertices;
-
-        glGenVertexArrays(1, &g_r2d_data->line_batch.vertex_array);
-        glBindVertexArray(g_r2d_data->line_batch.vertex_array);
-
-        glGenBuffers(1, &g_r2d_data->line_batch.vertex_buffer);
-        glBindBuffer(GL_ARRAY_BUFFER, g_r2d_data->line_batch.vertex_buffer);
-        glBufferData(GL_ARRAY_BUFFER, MAX_LINES * 2 * sizeof(line_vertex_t), 0, GL_DYNAMIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(line_vertex_t), (void*)offsetof(line_vertex_t, position));
-
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(line_vertex_t), (void*)offsetof(line_vertex_t, color));
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
@@ -249,6 +227,7 @@ void r2d_init(MemoryArena *arena) {
     FT_Done_FreeType(ft);
 
     _r2d_batch_begin(&g_r2d_data->quad_batch);
+    _r2d_batch_begin(&g_r2d_data->text_batch);
 }
 void r2d_clear(vec4_t color) {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -280,35 +259,12 @@ void r2d_render_rect_rounded(vec2_t position, vec2_t size, vec4_t color, float r
 }
 
 void r2d_render_text(str_t text, vec2_t position, float scale, vec3_t color) {
-    static int init = 0;
-    static unsigned int VAO, VBO;
-
-    if (init == 0) {
-        init = 1;
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
-
-        glGenBuffers(1, &VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 5, NULL, GL_DYNAMIC_DRAW);
-        
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (2 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (4 * sizeof(float)));
-        
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0); 
-
-    }
-
     shader_use(g_r2d_data->text_shader);
-    shader_set_v3(g_r2d_data->text_shader, "textColor", color);
-    shader_set_int(g_r2d_data->text_shader, "texture_array", GL_TEXTURE0);
+    shader_set_v3(g_r2d_data->text_shader, "textColor", color); //Move to vertex
 
-    glBindVertexArray(VAO);
+    if (g_r2d_data->text_batch.count >= MAX_CHARACTERS) {
+        r2d_batch_flush(&g_r2d_data->text_batch, 6, g_r2d_data->text_shader, g_r2d_data->font_texture_array);
+    }
 
     for (uint32_t i = 0; i < text.size; i++) {
         str_t c = str_substr(text, i, i+1);
@@ -321,28 +277,30 @@ void r2d_render_text(str_t text, vec2_t position, float scale, vec3_t color) {
         float w = ch.size.x * scale;
         float h = ch.size.y * scale;
 
-        float vertices[6][5] = {
-            { xpos,     ypos + h,   0.0f, ch.size.y / (float) FONT_SIZE, ch.texture.handle },            
-            { xpos,     ypos,       0.0f, 0, ch.texture.handle },
-            { xpos + w, ypos,       ch.size.x / (float) FONT_SIZE, 0, ch.texture.handle },
+        text_vertex_t *v = g_r2d_data->text_batch.vertices;
 
-            { xpos,     ypos + h,   0.0f, ch.size.y / (float) FONT_SIZE, ch.texture.handle },
-            { xpos + w, ypos,       ch.size.x / (float) FONT_SIZE, 0, ch.texture.handle },
-            { xpos + w, ypos + h,   ch.size.x / (float) FONT_SIZE, ch.size.y / (float) FONT_SIZE, ch.texture.handle }           
-        };
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, g_r2d_data->font_texture_array.handle);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        v[0].position = (vec2_t) { xpos, ypos};
+        v[0].tex_coords = (vec2_t) { 0.0f, 0.0f };
+        v[0].tex_id = ch.texture.handle;
         
-        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        v[1].position = (vec2_t) { xpos + w, ypos};
+        v[1].tex_coords = (vec2_t) { ch.size.x / (float) FONT_SIZE, 0.0f };
+        v[1].tex_id = ch.texture.handle;
+        
+        v[2].position = (vec2_t) {  xpos + w, ypos + h};
+        v[2].tex_coords = (vec2_t) { ch.size.x / (float) FONT_SIZE, ch.size.y / (float) FONT_SIZE};
+        v[2].tex_id = ch.texture.handle;
+        
+        v[3].position = (vec2_t) { xpos, ypos + h};
+        v[3].tex_coords = (vec2_t) { 0.0f, ch.size.y / (float) FONT_SIZE};
+        v[3].tex_id = ch.texture.handle;
+
+        (text_vertex_t*) g_r2d_data->text_batch.vertices += 4;
+
+        g_r2d_data->text_batch.count++;
+
         position.x += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
     }
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 void r2d_render_sprite_rounded(vec2_t position, vec2_t size, Texture texture, vec4_t color, float rotation, vec2_t pivot, float rounded_radius) {
         
@@ -452,6 +410,7 @@ void r2d_batch_flush(render_batch_t *batch, uint32_t indices_per, Shader shader,
 
 void r2d_flush() {
     r2d_batch_flush(&g_r2d_data->quad_batch, 6, g_r2d_data->default_shader, g_r2d_data->texture_array);
+    r2d_batch_flush(&g_r2d_data->text_batch, 6, g_r2d_data->text_shader, g_r2d_data->font_texture_array);
 }
 
 Texture r2d_texture_array_add(str_t path, uint8_t bilinear, TextureFormat format) {
