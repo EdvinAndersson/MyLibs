@@ -413,8 +413,26 @@ void r2d_flush() {
     r2d_batch_flush(&g_r2d_data->text_batch, 6, g_r2d_data->text_shader, g_r2d_data->font_texture_array);
 }
 
-Texture r2d_texture_array_add(str_t path, uint8_t bilinear, TextureFormat format) {
+Texture r2d_texture_array_add(str_t path, uint8_t bilinear) {
     TextureData texture_data = texture_load_data(path);
+
+    TextureFormat format;
+
+    switch (texture_data.channels)
+    {
+    case 1:
+        format = TextureFormat_RED;
+        break;
+    case 3:
+        format = TextureFormat_RGB;
+        break;
+    case 4:
+        format = TextureFormat_RGBA;
+        break;
+    default:
+        UTIL_ASSERT(0, "Number of channels for texture not supported...");
+        break;
+    }
 
     Texture texture = texture_3d_add(&g_r2d_data->texture_array, texture_data.width, texture_data.height, bilinear, format, texture_data.data);
 

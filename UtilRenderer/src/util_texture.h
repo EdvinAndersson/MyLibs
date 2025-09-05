@@ -9,11 +9,6 @@
 
 #include "UtilWindow/src/util_opengl_bindings.h"
 
-typedef enum TextureType {
-    TextureType_Texture2D,
-    TextureType_Texture3D
-} TextureType;
-
 typedef enum TextureFormat {
     TextureFormat_RED,
     TextureFormat_RGB,
@@ -29,7 +24,6 @@ typedef struct TextureArray {
 
 typedef struct Texture {
     uint32_t handle;
-    TextureType type;
     float use_bilinear;
     uint32_t format;
     uint32_t width, height;
@@ -38,6 +32,7 @@ typedef struct Texture {
 typedef struct TextureData {
     unsigned char *data;
     uint32_t width, height;
+    uint32_t channels;
 } TextureData;
 
 Texture texture_2d_create(uint32_t width, uint32_t height, TextureFormat texture_format, void *pixel_data);
