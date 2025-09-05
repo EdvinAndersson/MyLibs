@@ -37,19 +37,10 @@ void r2d_render_text(str_t text, vec2_t position, float scale, vec3_t color);
 cmap_map_t *r2d_get_character_map();
 uint32_t r2d_get_line_height();
 
-Texture r2d_texture_array_add(str_t path, uint8_t bilinear, TextureFormat format);
+Texture r2d_texture_array_add(str_t path, uint8_t bilinear);
 
 void r2d_batch_flush(render_batch_t *batch, uint32_t indices_per, Shader shader, TextureArray texture_array);
 void _r2d_batch_begin(render_batch_t *batch);
 void _r2d_batch_end(render_batch_t *batch);
 
 void r2d_flush();
-void _r2d_begin_batch();
-void _r2d_end_batch();
-
-void _r2d_create_texture_3d();
-
-Texture r2d_create_texture_from_file(str_t path, uint8_t bilinear, uint32_t format);
-Texture r2d_create_texture_from_data(TextureData texture_data, uint8_t bilinear, uint32_t format);
-Texture r2d_create_font_texture(unsigned char *data, uint32_t width, uint32_t height, uint8_t bilinear);
-Texture r2d_create_texture(unsigned char *data, uint32_t width, uint32_t height, uint8_t bilinear, uint32_t format);

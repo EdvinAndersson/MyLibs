@@ -11,8 +11,8 @@ int main() {
 
     r2d_init(&arena);
 
-    Texture sword_texture = r2d_texture_array_add(str_lit("UtilRenderer/res/Sword.png"), 0, TextureFormat_RGBA);
-    Texture sword_texture2 = r2d_texture_array_add(str_lit("UtilRenderer/res/Sword.png"), 1, TextureFormat_RGBA);;
+    Texture sword_texture = r2d_texture_array_add(str_lit("UtilRenderer/res/Sword.png"), 0);
+    Texture sword_texture2 = r2d_texture_array_add(str_lit("UtilRenderer/res/Sword.png"), 1);;
 
     int running = 1;
 

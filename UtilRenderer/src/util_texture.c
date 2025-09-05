@@ -28,7 +28,6 @@ Texture texture_2d_create(uint32_t width, uint32_t height, TextureFormat texture
         }
     }
 
-    texture.type = TextureType_Texture2D;
     texture.format = format;
     texture.width = width;
     texture.height = height;
@@ -98,7 +97,6 @@ Texture texture_3d_add(TextureArray *texture_array, uint32_t width, uint32_t hei
     texture.width = width;
     texture.height = height;
     texture.use_bilinear = bilinear;
-    texture.type = TextureType_Texture3D;
 
     texture_array->next_slot += 1;
     
@@ -109,8 +107,7 @@ TextureData texture_load_data(str_t path) {
     StackMemoryArena scratch_arena = arena_get_scratch(0);
     
     TextureData texture_data;
-    int nr_channels;
-    texture_data.data = stbi_load(str_to_cstr(scratch_arena.arena, path), &texture_data.width, &texture_data.height, &nr_channels, 0);
+    texture_data.data = stbi_load(str_to_cstr(scratch_arena.arena, path), &texture_data.width, &texture_data.height, &texture_data.channels, 0);
 
     arena_release_scratch(&scratch_arena);
 
