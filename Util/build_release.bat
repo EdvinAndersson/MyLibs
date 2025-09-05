@@ -1,5 +1,7 @@
 @echo off
 
+pushd Util
+
 if not exist build_release mkdir build_release
 pushd build_release
 
@@ -21,4 +23,5 @@ if %ERRORLEVEL% == 0 (
     echo ---- Error was found. Not Creating a .lib ----
 )
 
+popd
 popd

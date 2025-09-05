@@ -17,7 +17,9 @@ int main() {
     int running = 1;
 
     double second_timer = 0, previous_time = 0;
-
+    double fps_counter = 0;
+    char buf[20];
+    
     do {
         double time = window_get_time();
         double delta_time = time - previous_time;
@@ -28,6 +30,7 @@ int main() {
         if (second_timer >= 1) {
             second_timer = 0;
             printf("FPS: %f\n", fps);
+            fps_counter = fps;
             arena_log_info(&arena);
         }
         previous_time = time;
@@ -71,7 +74,15 @@ int main() {
             ui_text(str_lit("Hello Edvin!llllllllllllllllllll"), 400, 100);
             ui_pop_style();
 
-            ui_text(str_lit("Hello Edvin!"), 400, 150);
+            sprintf_s(buf, 20, "FPS: %.f", fps_counter);
+            str_t fps_counter_str = str_create(buf);
+            ui_text(fps_counter_str, 10, 50);
+
+            StackMemoryArena stack = arena_push_stack_arena(&arena);
+
+            str_t fps_c = str_create_fmt(stack.arena, 30, "FPS: %.f", fps_counter);
+
+            arena_pop_stack_arena(&stack);
 
             r2d_render_rect((vec2_t) {100,100}, (vec2_t) {50, 50}, (vec4_t) {1,1,1,1}, 0, (vec2_t) {0.5f, 0.5f});
             r2d_render_rect((vec2_t) {200,100}, (vec2_t) {50, 50}, (vec4_t) {0,0,1,1}, 25.5, (vec2_t) {0.5f, 0.5f});

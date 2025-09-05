@@ -1,7 +1,7 @@
 @echo off
 
 pushd Util
-::call build_release.bat
+call build_release.bat
 popd
 
 pushd UtilWindow

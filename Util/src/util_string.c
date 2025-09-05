@@ -13,8 +13,20 @@ str_t str_create(char *str) {
 
     return result;
 }
+str_t str_create_fmt(MemoryArena *arena, uint32_t size, char *format, ...) {
+    va_list arg_list;
+    va_start(arg_list, format);
 
-str_t str_create_empty(MemoryArena *arena, int size) {
+    str_t result = str_create_empty(arena, size);
+
+    vsprintf(result.buf, format, arg_list);
+
+    va_end(arg_list);
+
+    return result;
+}
+
+str_t str_create_empty(MemoryArena *arena, uint32_t size) {
     str_t result = {0};
     result.size = size;
     result.buf = arena_alloc(arena, size, char);
@@ -43,7 +55,7 @@ str_t str_copy(MemoryArena *arena, str_t str) {
     return result;
 }
 
-int str_equal(str_t str1, str_t str2) {
+uint32_t str_equal(str_t str1, str_t str2) {
     if (str1.size != str2.size)
         return 0;
     

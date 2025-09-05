@@ -37,6 +37,9 @@ int main() {
 
     printf("Vec2: (%f, %f)\n", v.x, v.y);
 
+    str_t str6 = str_create_fmt(&arena, 20, "Test: %i, %s", 10, "dsadsa");
+    printf("Formated string: %s\n", str6.buf);
+
     arena_log_info(&arena);
     return 0;
 }
