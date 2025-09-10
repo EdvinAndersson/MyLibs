@@ -10,18 +10,13 @@
 
 #include "UtilWindow/src/util_opengl_bindings.h"
 
+#include "util_renderer.h"
 #include "util_shader.h"
 #include "util_texture.h"
 #include "util_shaders.h"
 #include "util_key_map.h"
 
 #define FONT_SIZE 64
-
-typedef struct render_batch {
-    void *vertices, *vertices_begin;
-    uint32_t count;
-    uint32_t vertex_array, vertex_buffer;
-} render_batch_t;
 
 void r2d_init(MemoryArena *arena);
 void r2d_clear(vec4_t color);
@@ -32,6 +27,8 @@ void r2d_render_sprite(vec2_t position, vec2_t size, Texture texture, vec4_t col
 void r2d_render_rect_rounded(vec2_t position, vec2_t size, vec4_t color, float rotation, vec2_t pivot, float rounded_radius);
 void r2d_render_sprite_rounded(vec2_t position, vec2_t size, Texture texture, vec4_t color, float rotation, vec2_t pivot, float rounded_radius);
 void r2d_render_thick_line(vec2_t start, vec2_t end, float thickness, vec4_t color);
+
+void r2d_render_quad(vec2_t postion, Texture texture);
 
 void r2d_render_text(str_t text, vec2_t position, float scale, vec3_t color);
 cmap_map_t *r2d_get_character_map();

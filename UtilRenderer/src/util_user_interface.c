@@ -91,7 +91,7 @@ void ui_end() {
 ui_box_t* ui_box(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, UIBoxFlags flags) {
     ui_box_t *box = arena_alloc(&ui_state.box_arena, 1, ui_box_t);
     box->id = id;
-    box->bounds = (vec4_t) { x, y, width, height };
+    box->bounds = (vec4_t) { (float) x, (float) y, (float) width, (float) height };
     box->flags = flags;
     box->style = ui_state.style_stack->style;
 
@@ -126,7 +126,7 @@ UIInput ui_checkbox(int32_t id, int32_t x, int32_t y, int32_t width, int32_t hei
     style.background_color = *value ? (vec4_t) { 0.1f, 0.9f, 0.1f, 1 } : (vec4_t) { 0.9f, 0.1f, 0.1f, 1 };
     
     ui_push_style(style);
-    ui_box_t *check_box = ui_box(0, x+2, y+2, width-4, height-4, UIBoxFlags_DrawBackground);
+    ui_box(0, x + 2, y + 2, width - 4, height - 4, UIBoxFlags_DrawBackground);
     ui_pop_style(style);
 
     if (result.mouse_pressed)
@@ -152,21 +152,70 @@ int8_t ui_slider(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height
     style.background_color = (vec4_t) { 0.9f, 0.1f, 0.1f, 1 };
     
     ui_push_style(style);
-    ui_box_t *slider_box = ui_box(0, x + btn_size / 2, y + y_pos, btn_size, btn_size, UIBoxFlags_DrawBackground);
+    ui_box(0, x + btn_size / 2, y + y_pos, btn_size, btn_size, UIBoxFlags_DrawBackground);
     ui_pop_style(style);
 
     uint8_t updated = 0;
 
     if (result.mouse_down){
-        int mouse_pos = ui_state.mouse_pos.y - y;
+        int32_t mouse_pos = (int32_t) ui_state.mouse_pos.y - y;
         if (mouse_pos < btn_size) mouse_pos = btn_size;
         if (mouse_pos > height-btn_size) mouse_pos = height-btn_size;
-        int v = ((mouse_pos - btn_size) * max) / (height-btn_size * 2);
+        int32_t v = ((mouse_pos - btn_size) * max) / (height-btn_size * 2);
         if (v != *value) {
             *value = v;
             updated = 1;
         }
     }
+
+    return updated;
+}
+int8_t ui_slider_horizontal(int32_t id, int32_t x, int32_t y, int32_t min, int32_t max, float *value) {
+    UIBoxFlags flags =  UIBoxFlags_DrawBackground | 
+                        UIBoxFlags_DrawDropShadow |
+                        UIBoxFlags_Clickable |
+                        UIBoxFlags_HotAnimation |
+                        UIBoxFlags_ActiveAnimation;
+
+    int32_t width = 100, height = 30;
+
+    ui_box_t *box = ui_box(id, x, y, width, height, flags);
+
+    UIInput result = ui_input_from_box(box);
+
+    int32_t btn_size = height / 2;
+    int32_t x_pos = ((width - btn_size * 2) * (*value)) / max + btn_size / 2;
+
+    UIStyle style = ui_copy_style();
+    style.background_color = (vec4_t) { 0.9f, 0.1f, 0.1f, 1 };
+    
+    ui_push_style(style);
+    ui_box(0, x + x_pos, y +  + btn_size / 2, btn_size, btn_size, UIBoxFlags_DrawBackground);
+    ui_pop_style(style);
+
+    uint8_t updated = 0;
+
+    if (result.mouse_down){
+        int32_t mouse_pos = (int32_t) ui_state.mouse_pos.x - x;
+        if (mouse_pos < btn_size) mouse_pos = btn_size;
+        if (mouse_pos > width-btn_size) mouse_pos = width-btn_size;
+        int32_t v = ((mouse_pos - btn_size) * max) / (width - btn_size * 2);
+        if (v != *value) {
+            *value = v;
+            updated = 1;
+        }
+    }
+
+    return updated;
+}
+int8_t ui_slider_vec2(int32_t id, int32_t x, int32_t y, int32_t min, int32_t max, vec2_t *value) {
+    int8_t updated = 0;
+    uint32_t spacing = 110;
+
+    if (ui_slider_horizontal(0, x, y, min, max, &value->x))
+        updated = 1;
+    if (ui_slider_horizontal(0, x + spacing, y, min, max, &value->y))
+        updated = 1;
 
     return updated;
 }
@@ -177,12 +226,11 @@ void ui_panel(int32_t x, int32_t y, int32_t width, int32_t height) {
     UIStyle style = ui_copy_style();
     style.background_color = style.panel_color;
     ui_push_style(style);
-    ui_box_t *box = ui_box(0, x, y, width, height, flags);
+    ui_box(0, x, y, width, height, flags);
     ui_pop_style();
 }
 void ui_text(str_t text, int32_t x, int32_t y) {
-    UIBoxFlags flags =  UIBoxFlags_Text |
-                        UIBoxFlags_DrawBackground;
+    UIBoxFlags flags =  UIBoxFlags_Text;
 
     float text_size = ui_state.style_stack->style.text_size;
 
@@ -199,8 +247,7 @@ void ui_text(str_t text, int32_t x, int32_t y) {
         text_width += ((ch.advance >> 6)) * scale;
     }
 
-    ui_box_t *box = ui_box(0, x, y, text_width, r2d_get_line_height() * scale, flags);
-
+    ui_box_t *box = ui_box(0, x, y, (int32_t) text_width, (int32_t) (r2d_get_line_height() * scale), flags);
     box->text = text;
 }
 

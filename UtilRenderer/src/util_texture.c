@@ -1,5 +1,30 @@
 #include "util_texture.h"
 
+Texture texture_2d_load(str_t path) {
+    TextureData data = texture_load_data(path);
+
+    TextureFormat format = TextureFormat_RGBA;
+
+    switch (data.channels)
+    {
+    case 1:
+        format = TextureFormat_RED;
+        break;
+    case 3:
+        format = TextureFormat_RGB;
+        break;
+    case 4:
+        format = TextureFormat_RGBA;
+        break;
+    default:
+        UTIL_ASSERT(0, "Number of channels for texture not supported...");
+        break;
+    }
+
+
+    return texture_2d_create(data.width, data.height, format, data.data);
+}
+
 Texture texture_2d_create(uint32_t width, uint32_t height, TextureFormat texture_format, void *pixel_data) {
     Texture texture = { 0 };
 
@@ -107,7 +132,7 @@ TextureData texture_load_data(str_t path) {
     StackMemoryArena scratch_arena = arena_get_scratch(0);
     
     TextureData texture_data;
-    texture_data.data = stbi_load(str_to_cstr(scratch_arena.arena, path), &texture_data.width, &texture_data.height, &texture_data.channels, 0);
+    texture_data.data = stbi_load(str_to_cstr(scratch_arena.arena, path), (int*) &texture_data.width, (int*) &texture_data.height, (int*) &texture_data.channels, 0);
 
     arena_release_scratch(&scratch_arena);
 

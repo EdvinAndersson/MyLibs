@@ -25,11 +25,6 @@ typedef struct vertex {
     float tex_id, use_bilinear;
 } vertex_t;
 
-typedef struct line_vertex {
-    vec2_t position;
-    vec4_t color;
-} line_vertex_t;
-
 typedef struct text_vertex {
     vec2_t position;
     vec2_t tex_coords;
@@ -37,11 +32,13 @@ typedef struct text_vertex {
 } text_vertex_t;
 
 typedef struct Renderer2dData {
-    Shader default_shader, line_shader, text_shader;
+    Shader default_shader, text_shader, framebuffer_shader;
     Texture white_texture;
     
     render_batch_t quad_batch;
     render_batch_t text_batch;
+
+    uint32_t quad_vao;
     
     TextureArray texture_array, font_texture_array;
     
@@ -63,7 +60,7 @@ void r2d_init(MemoryArena *arena) {
 
     unsigned int white = 0xffffffff;
     g_r2d_data->white_texture = texture_3d_add(&g_r2d_data->texture_array, 1, 1, 0, TextureFormat_RGBA, (unsigned char *)&white);
-    
+
     g_r2d_data->default_shader = shader_create(g_vertex_shader, g_fragment_shader);
     shader_use(g_r2d_data->default_shader);
     shader_set_int(g_r2d_data->default_shader, "image", 0);
@@ -71,13 +68,48 @@ void r2d_init(MemoryArena *arena) {
     shader_set_mat4(g_r2d_data->default_shader, "view", &view);
     shader_set_int(g_r2d_data->default_shader, "texture_array", GL_TEXTURE0);
     
-    g_r2d_data->line_shader = shader_create(g_vertex_shader_line, g_fragment_shader_line);
-    shader_use(g_r2d_data->line_shader);
-    shader_set_mat4(g_r2d_data->line_shader, "view", &view);
-    
     g_r2d_data->text_shader = shader_create(g_vertex_shader_text, g_fragment_shader_text);
     shader_use(g_r2d_data->text_shader);
     shader_set_int(g_r2d_data->text_shader, "texture_array", GL_TEXTURE0);
+
+    g_r2d_data->framebuffer_shader = shader_create(g_vertex_shader_framebuffer, g_fragment_shader_framebuffer);
+    shader_use(g_r2d_data->framebuffer_shader);
+    shader_set_int(g_r2d_data->framebuffer_shader, "screenTexture", GL_TEXTURE0);
+
+    //Quad data
+    {
+        float vertices[] = {
+            0.5f,  0.5f, 1.0f, 0.0f,  // top right
+            0.5f, -0.5f, 1.0f, 1.0f,  // bottom right
+            -0.5f, -0.5f, 0.0f, 1.0f,  // bottom left
+            -0.5f,  0.5f, 0.0f, 0.0f   // top left 
+        };
+        unsigned int indices[] = {  // note that we start from 0!
+            0, 1, 3,   // first triangle
+            1, 2, 3    // second triangle
+        };
+
+        glGenVertexArrays(1, &g_r2d_data->quad_vao);
+        glBindVertexArray(g_r2d_data->quad_vao);
+
+        uint32_t vbo;
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        uint32_t ebo;
+        glGenBuffers(1, &ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) 0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) (2 * sizeof(float)));
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
 
     //Batch Data
     {
@@ -211,8 +243,8 @@ void r2d_init(MemoryArena *arena) {
         
         cmap_char_t character;
         character.texture = texture;
-        character.size = (vec2_t) { face->glyph->bitmap.width, face->glyph->bitmap.rows };
-        character.bearing = (vec2_t) { face->glyph->bitmap_left, face->glyph->bitmap_top };
+        character.size = (vec2_t) { (float) face->glyph->bitmap.width, (float) face->glyph->bitmap.rows };
+        character.bearing = (vec2_t) { (float) face->glyph->bitmap_left, (float) face->glyph->bitmap_top };
         character.advance = face->glyph->advance.x;
 
         str_t str = str_create_empty(stack_arena.arena, 1);
@@ -240,13 +272,10 @@ void r2d_update_projection(vec2_t window_size) {
     shader_set_mat4(g_r2d_data->default_shader, "projection", &projection);
     shader_set_v2(g_r2d_data->default_shader, "screen_resolution", window_size);
 
-    shader_use(g_r2d_data->line_shader);
-    shader_set_mat4(g_r2d_data->line_shader, "projection", &projection);
-
     shader_use(g_r2d_data->text_shader);
     shader_set_mat4(g_r2d_data->text_shader, "projection", &projection);
 
-    glViewport(0, 0, window_size.width, window_size.height);
+    glViewport(0, 0, (int32_t) window_size.width, (int32_t) window_size.height);
 }
 void r2d_render_rect(vec2_t position, vec2_t size, vec4_t color, float rotation, vec2_t pivot) {
     r2d_render_sprite(position, size, g_r2d_data->white_texture, color, rotation, pivot);
@@ -281,21 +310,21 @@ void r2d_render_text(str_t text, vec2_t position, float scale, vec3_t color) {
 
         v[0].position = (vec2_t) { xpos, ypos};
         v[0].tex_coords = (vec2_t) { 0.0f, 0.0f };
-        v[0].tex_id = ch.texture.handle;
+        v[0].tex_id = (float) ch.texture.handle;
         
         v[1].position = (vec2_t) { xpos + w, ypos};
         v[1].tex_coords = (vec2_t) { ch.size.x / (float) FONT_SIZE, 0.0f };
-        v[1].tex_id = ch.texture.handle;
+        v[1].tex_id = (float) ch.texture.handle;
         
         v[2].position = (vec2_t) {  xpos + w, ypos + h};
         v[2].tex_coords = (vec2_t) { ch.size.x / (float) FONT_SIZE, ch.size.y / (float) FONT_SIZE};
-        v[2].tex_id = ch.texture.handle;
+        v[2].tex_id = (float) ch.texture.handle;
         
         v[3].position = (vec2_t) { xpos, ypos + h};
         v[3].tex_coords = (vec2_t) { 0.0f, ch.size.y / (float) FONT_SIZE};
-        v[3].tex_id = ch.texture.handle;
+        v[3].tex_id = (float) ch.texture.handle;
 
-        (text_vertex_t*) g_r2d_data->text_batch.vertices += 4;
+        g_r2d_data->text_batch.vertices = (text_vertex_t*) g_r2d_data->text_batch.vertices + 4;
 
         g_r2d_data->text_batch.count++;
 
@@ -359,7 +388,7 @@ void r2d_render_sprite_rounded(vec2_t position, vec2_t size, Texture texture, ve
     v[3].tex_id = texture_id;
     v[3].use_bilinear = texture.use_bilinear;
 
-    (vertex_t*)g_r2d_data->quad_batch.vertices += 4;
+   g_r2d_data->quad_batch.vertices =  (vertex_t*) g_r2d_data->quad_batch.vertices + 4;
 
     g_r2d_data->quad_batch.count++;
 }
@@ -389,8 +418,17 @@ void r2d_render_thick_line(vec2_t start, vec2_t end, float thickness, vec4_t col
     v[2] = (vertex_t){ p2, {0,0}, color, {0,0}, {0,0}, 0, tex_id, use_bilinear };
     v[3] = (vertex_t){ p3, {0,0}, color, {0,0}, {0,0}, 0, tex_id, use_bilinear };
 
-    (vertex_t*) g_r2d_data->quad_batch.vertices += 4;
+    g_r2d_data->quad_batch.vertices = (vertex_t*) g_r2d_data->quad_batch.vertices + 4;
     g_r2d_data->quad_batch.count++;
+}
+
+void r2d_render_quad(vec2_t postion, Texture texture) {
+    shader_use(g_r2d_data->framebuffer_shader);
+
+    glBindTexture(GL_TEXTURE_2D, g_r2d_data->white_texture.handle);
+    glBindVertexArray(g_r2d_data->quad_vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
 
 void r2d_batch_flush(render_batch_t *batch, uint32_t indices_per, Shader shader, TextureArray texture_array) {
@@ -416,7 +454,7 @@ void r2d_flush() {
 Texture r2d_texture_array_add(str_t path, uint8_t bilinear) {
     TextureData texture_data = texture_load_data(path);
 
-    TextureFormat format;
+    TextureFormat format = TextureFormat_RGBA;
 
     switch (texture_data.channels)
     {

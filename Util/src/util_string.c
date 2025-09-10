@@ -18,10 +18,15 @@ str_t str_create_fmt(MemoryArena *arena, uint32_t size, char *format, ...) {
     va_start(arg_list, format);
 
     str_t result = str_create_empty(arena, size);
-
-    vsprintf(result.buf, format, arg_list);
+    vsprintf_s(result.buf, size, format, arg_list);
 
     va_end(arg_list);
+
+    //Shrink to fit
+    size_t count = 0;
+    while (result.buf[count] != 0)
+        count++;
+    result.size = count;
 
     return result;
 }

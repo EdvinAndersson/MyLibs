@@ -79,33 +79,6 @@ static str_t g_fragment_shader = str_comp(
     "}\n"
 );
 
-static str_t g_vertex_shader_line = str_comp(
-    "#version 330 core\n"
-    "layout (location = 0) in vec2 a_pos;\n"
-    "layout (location = 1) in vec4 a_color;\n"
-    ""
-    "out vec4 f_color;\n"
-    ""
-    "uniform mat4 view;\n"
-    "uniform mat4 projection;\n"
-    ""
-    "void main()\n"
-    "{\n"
-    "   f_color = a_color;\n"
-    "   gl_Position = projection * view * vec4(a_pos, 0.0, 1.0);\n"
-    "}\n"
-);
-static str_t g_fragment_shader_line = str_comp(
-    "#version 330 core\n"
-    "in vec4 f_color;\n"
-    "out vec4 FragColor;\n"
-    ""
-    "void main()\n"
-    "{\n"
-    "   FragColor = f_color;\n"
-    "}\n"
-);
-
 static str_t g_vertex_shader_text = str_comp(
     "#version 330 core\n"
     "layout (location = 0) in vec2 a_pos;\n"
@@ -139,5 +112,30 @@ static str_t g_fragment_shader_text = str_comp(
     "   vec3 array_uv = vec3(f_tex_coords.x, f_tex_coords.y, f_tex_index);\n"
     "   vec4 sampled = vec4(1.0, 1.0, 1.0, texture(texture_array, array_uv).r);\n"
     "   FragColor = vec4(textColor, 1.0) * sampled;\n"
+    "}\n"
+);
+
+static str_t g_vertex_shader_framebuffer = str_comp(
+    "#version 330 core\n"
+    "layout (location = 0) in vec2 aPos;\n"
+    "layout (location = 1) in vec2 aTexCoords;\n"
+
+    "out vec2 TexCoords;\n"
+
+    "void main() {\n"
+    "   gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);\n"
+    "   TexCoords = aTexCoords;\n"
+    "}\n"
+);
+
+static str_t g_fragment_shader_framebuffer = str_comp(
+    "#version 330 core\n"
+    
+    "out vec4 FragColor;\n"
+    "in vec2 TexCoords;\n"
+    "uniform sampler2D screenTexture;\n"
+
+    "void main() {\n"
+    "   FragColor = texture(screenTexture, TexCoords);\n"
     "}\n"
 );

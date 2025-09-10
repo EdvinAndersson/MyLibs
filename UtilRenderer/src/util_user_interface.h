@@ -19,7 +19,7 @@ typedef struct UIStyle {
     vec4_t hot_color;
     vec4_t active_color;
     vec4_t panel_color;
-    int32_t shadow_offset;
+    float shadow_offset;
     vec4_t text_color;
     float text_size;
 } UIStyle;
@@ -77,6 +77,8 @@ ui_box_t* ui_box(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height
 UIInput ui_button(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height);
 UIInput ui_checkbox(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t *value);
 int8_t ui_slider(int32_t id, int32_t x, int32_t y, int32_t width, int32_t height, int32_t max, int32_t *value);
+int8_t ui_slider_horizontal(int32_t id, int32_t x, int32_t y, int32_t min, int32_t max, float *value);
+int8_t ui_slider_vec2(int32_t id, int32_t x, int32_t y, int32_t min, int32_t max, vec2_t *value);
 void ui_panel(int32_t x, int32_t y, int32_t width, int32_t height);
 void ui_text(str_t text, int32_t x, int32_t y);
 

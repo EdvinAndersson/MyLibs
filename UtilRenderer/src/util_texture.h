@@ -35,6 +35,7 @@ typedef struct TextureData {
     uint32_t channels;
 } TextureData;
 
+Texture texture_2d_load(str_t path);
 Texture texture_2d_create(uint32_t width, uint32_t height, TextureFormat texture_format, void *pixel_data);
 
 TextureArray texture_3d_create(uint32_t texture_size, uint32_t texture_count, TextureFormat texture_format);

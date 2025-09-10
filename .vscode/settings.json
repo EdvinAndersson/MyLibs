@@ -34,7 +34,10 @@
         "util_file.h": "c",
         "stdint.h": "c",
         "initializer_list": "c",
-        "ft2build.h": "c"
+        "ft2build.h": "c",
+        "util_shaders.h": "c",
+        "util_framebuffer.h": "c",
+        "util_user_interface.h": "c"
     },
     "C_Cpp.default.compilerPath": "cl.exe"
 }
